@@ -16,30 +16,44 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const response = NextResponse.next({ request });
-  const supabase = createMiddlewareSupabaseClient(request, response);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const response = NextResponse.next();
+  let userId: string | undefined;
+  let accessStatus: string | undefined;
 
-  if (!user) {
+  try {
+    const supabase = createMiddlewareSupabaseClient(request, response);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userId = user?.id;
+
+    if (userId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("access_status, role")
+        .eq("id", userId)
+        .maybeSingle();
+      accessStatus = profile?.access_status;
+    }
+  } catch {
     if (isProtectedRoute(pathname)) {
       return NextResponse.redirect(new URL(getRedirectPath(request.nextUrl.pathname, origin), origin));
     }
     return response;
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("access_status, role")
-    .eq("id", user.id)
-    .maybeSingle();
+  if (!userId) {
+    if (isProtectedRoute(pathname)) {
+      return NextResponse.redirect(new URL(getRedirectPath(request.nextUrl.pathname, origin), origin));
+    }
+    return response;
+  }
 
-  if (isAuthRoute(pathname) && profile?.access_status === "approved") {
+  if (isAuthRoute(pathname) && accessStatus === "approved") {
     return NextResponse.redirect(new URL("/home", origin));
   }
 
-  if (isProtectedRoute(pathname) && profile?.access_status !== "approved") {
+  if (isProtectedRoute(pathname) && accessStatus !== "approved") {
     return NextResponse.redirect(new URL("/access-pending", origin));
   }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getRedirectPath, isAuthRoute, isProtectedRoute } from "./routes";
+import { getSupabaseConfig } from "./session";
 
 describe("auth route helpers", () => {
   it("protects private application pages and API playback routes", () => {
@@ -28,5 +29,15 @@ describe("auth route helpers", () => {
     expect(getRedirectPath("https://evil.example/path", "http://localhost:3000")).toBe(
       "/login?redirectTo=%2Fhome",
     );
+  });
+
+  it("treats missing or invalid Supabase env as unconfigured", () => {
+    expect(getSupabaseConfig({})).toBeNull();
+    expect(
+      getSupabaseConfig({
+        NEXT_PUBLIC_SUPABASE_URL: "not-a-url",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+      }),
+    ).toBeNull();
   });
 });
