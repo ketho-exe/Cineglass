@@ -30,6 +30,11 @@ export function TopNav() {
               {link.label}
             </Link>
           ))}
+          <form action="/auth/logout" method="post">
+            <button className="rounded-full px-4 py-2 text-sm text-slate-300 transition hover:bg-white/10 hover:text-white">
+              Sign out
+            </button>
+          </form>
         </div>
       </nav>
     </header>

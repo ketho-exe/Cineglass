@@ -212,6 +212,30 @@ as $$
   select coalesce(public.current_user_role() in ('owner', 'admin'), false);
 $$;
 
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, display_name, access_status, role)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'display_name', split_part(new.email, '@', 1)),
+    'pending',
+    'member'
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
 create trigger profiles_set_updated_at before update on public.profiles for each row execute function public.set_updated_at();
 create trigger watch_progress_set_updated_at before update on public.watch_progress for each row execute function public.set_updated_at();
 create trigger ratings_set_updated_at before update on public.ratings for each row execute function public.set_updated_at();
@@ -236,6 +260,7 @@ alter table public.manual_title_overrides enable row level security;
 alter table public.watch_sessions enable row level security;
 
 create policy "Profiles are visible to approved users" on public.profiles for select using (public.current_user_approved());
+create policy "Users can insert own pending profile" on public.profiles for insert with check (id = auth.uid() and role = 'member');
 create policy "Users can update own profile" on public.profiles for update using (id = auth.uid()) with check (id = auth.uid());
 create policy "Admins can update profiles" on public.profiles for update using (public.is_admin()) with check (public.is_admin());
 
