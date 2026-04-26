@@ -1,0 +1,10 @@
+.env*
+!.env.example
+.next/
+node_modules/
+dist/
+coverage/
+.vercel/
+.turbo/
+*.tsbuildinfo
+cineglass-design-preview.html
