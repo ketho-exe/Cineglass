@@ -1,12 +1,21 @@
-import { LinkButton } from "@/components/ui/button";
-import { fallbackTv } from "@/lib/demo-data";
-import { getDetails, getTmdbImageUrl } from "@/lib/tmdb/client";
+import { toggleFavourite, toggleWatchlist } from "@/app/(app)/library-actions";
+import { LinkButton, SubmitButton } from "@/components/ui/button";
+import { getLibraryStatus } from "@/lib/library/queries";
+import { getDetails, getSeason, getTmdbImageUrl } from "@/lib/tmdb/client";
 import { yearFromDate } from "@/lib/utils";
-import { Play } from "lucide-react";
+import { Heart, Play, Plus } from "lucide-react";
+import { notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default async function TvDetailPage({ params }: { params: Promise<{ tmdbId: string }> }) {
   const { tmdbId } = await params;
-  const media = (await getDetails("tv", Number(tmdbId)).catch(() => null)) ?? fallbackTv.find((item) => item.tmdbId === Number(tmdbId)) ?? fallbackTv[0];
+  const media = await getDetails("tv", Number(tmdbId)).catch(() => null);
+  if (!media) notFound();
+  const [status, episodes] = await Promise.all([
+    getLibraryStatus("tv", media.tmdbId),
+    getSeason(media.tmdbId, 1).catch(() => []),
+  ]);
   const backdrop = getTmdbImageUrl(media.backdropPath, "original");
 
   return (
@@ -20,15 +29,27 @@ export default async function TvDetailPage({ params }: { params: Promise<{ tmdbI
           <p className="mt-4 text-slate-200">{media.overview}</p>
           <div className="mt-7 flex flex-wrap gap-3">
             <LinkButton href={`/watch/tv/${media.tmdbId}/season/1/episode/1`}><Play className="h-4 w-4 fill-current" />Start Episode 1</LinkButton>
+            <form action={toggleWatchlist}>
+              <input type="hidden" name="mediaType" value="tv" />
+              <input type="hidden" name="tmdbId" value={media.tmdbId} />
+              <input type="hidden" name="action" value={status.inWatchlist ? "remove" : "add"} />
+              <SubmitButton variant="glass"><Plus className="h-4 w-4" />{status.inWatchlist ? "Remove Watchlist" : "Watchlist"}</SubmitButton>
+            </form>
+            <form action={toggleFavourite}>
+              <input type="hidden" name="mediaType" value="tv" />
+              <input type="hidden" name="tmdbId" value={media.tmdbId} />
+              <input type="hidden" name="action" value={status.isFavourite ? "remove" : "add"} />
+              <SubmitButton variant="glass"><Heart className="h-4 w-4" />{status.isFavourite ? "Unfavourite" : "Favourite"}</SubmitButton>
+            </form>
           </div>
         </div>
       </section>
       <section className="glass rounded-3xl p-6">
         <h2 className="text-xl font-semibold">Season 1</h2>
         <div className="mt-4 grid gap-3">
-          {[1, 2, 3, 4, 5, 6].map((episode) => (
-            <a key={episode} href={`/watch/tv/${media.tmdbId}/season/1/episode/${episode}`} className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
-              Episode {episode}
+          {episodes.map((episode) => (
+            <a key={episode.episodeNumber} href={`/watch/tv/${media.tmdbId}/season/1/episode/${episode.episodeNumber}`} className="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
+              Episode {episode.episodeNumber}: {episode.title}
             </a>
           ))}
         </div>

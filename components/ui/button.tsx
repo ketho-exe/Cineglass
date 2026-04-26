@@ -43,3 +43,21 @@ export function LinkButton({ className, variant = "primary", href, ...props }: L
     />
   );
 }
+
+type SubmitButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: keyof typeof variants;
+};
+
+export function SubmitButton({ className, variant = "primary", ...props }: SubmitButtonProps) {
+  return (
+    <button
+      type="submit"
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition",
+        variants[variant],
+        className,
+      )}
+      {...props}
+    />
+  );
+}

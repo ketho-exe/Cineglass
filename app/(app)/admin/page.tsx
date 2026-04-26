@@ -1,15 +1,26 @@
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { LinkButton } from "@/components/ui/button";
+import { requireUser } from "@/lib/auth/require-user";
 
-export default function AdminPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminPage() {
+  const { supabase } = await requireUser();
+  const [users, featuredRows, overrides, sessions] = await Promise.all([
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase.from("featured_rows").select("id", { count: "exact", head: true }),
+    supabase.from("manual_title_overrides").select("id", { count: "exact", head: true }),
+    supabase.from("watch_sessions").select("id", { count: "exact", head: true }),
+  ]);
+
   return (
     <div>
       <h1 className="text-3xl font-bold">Admin</h1>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <AdminStatCard label="Users" value="12" />
-        <AdminStatCard label="Active this week" value="8" />
-        <AdminStatCard label="Featured rows" value="5" />
-        <AdminStatCard label="Player" value="VidKing" />
+        <AdminStatCard label="Users" value={String(users.count ?? 0)} />
+        <AdminStatCard label="Featured rows" value={String(featuredRows.count ?? 0)} />
+        <AdminStatCard label="Manual overrides" value={String(overrides.count ?? 0)} />
+        <AdminStatCard label="Watch sessions" value={String(sessions.count ?? 0)} />
       </div>
       <div className="mt-6 flex flex-wrap gap-3">
         <LinkButton href="/admin/users" variant="glass">Users</LinkButton>

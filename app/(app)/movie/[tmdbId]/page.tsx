@@ -1,12 +1,18 @@
-import { LinkButton } from "@/components/ui/button";
-import { fallbackMovies } from "@/lib/demo-data";
+import { toggleFavourite, toggleWatchlist } from "@/app/(app)/library-actions";
+import { LinkButton, SubmitButton } from "@/components/ui/button";
+import { getLibraryStatus } from "@/lib/library/queries";
 import { getDetails, getTmdbImageUrl } from "@/lib/tmdb/client";
 import { formatRuntime, yearFromDate } from "@/lib/utils";
 import { Heart, Play, Plus } from "lucide-react";
+import { notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default async function MovieDetailPage({ params }: { params: Promise<{ tmdbId: string }> }) {
   const { tmdbId } = await params;
-  const media = (await getDetails("movie", Number(tmdbId)).catch(() => null)) ?? fallbackMovies.find((item) => item.tmdbId === Number(tmdbId)) ?? fallbackMovies[0];
+  const media = await getDetails("movie", Number(tmdbId)).catch(() => null);
+  if (!media) notFound();
+  const status = await getLibraryStatus("movie", media.tmdbId);
   const backdrop = getTmdbImageUrl(media.backdropPath, "original");
   const poster = getTmdbImageUrl(media.posterPath, "w500");
 
@@ -24,8 +30,18 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ tm
             <p className="mt-4 text-sm text-slate-300">{formatRuntime(undefined)} {media.voteAverage ? `TMDB ${media.voteAverage.toFixed(1)}` : ""}</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <LinkButton href={`/watch/movie/${media.tmdbId}`}><Play className="h-4 w-4 fill-current" />Watch Movie</LinkButton>
-              <LinkButton href="/watchlist" variant="glass"><Plus className="h-4 w-4" />Watchlist</LinkButton>
-              <LinkButton href="/profile" variant="glass"><Heart className="h-4 w-4" />Favourite</LinkButton>
+              <form action={toggleWatchlist}>
+                <input type="hidden" name="mediaType" value="movie" />
+                <input type="hidden" name="tmdbId" value={media.tmdbId} />
+                <input type="hidden" name="action" value={status.inWatchlist ? "remove" : "add"} />
+                <SubmitButton variant="glass"><Plus className="h-4 w-4" />{status.inWatchlist ? "Remove Watchlist" : "Watchlist"}</SubmitButton>
+              </form>
+              <form action={toggleFavourite}>
+                <input type="hidden" name="mediaType" value="movie" />
+                <input type="hidden" name="tmdbId" value={media.tmdbId} />
+                <input type="hidden" name="action" value={status.isFavourite ? "remove" : "add"} />
+                <SubmitButton variant="glass"><Heart className="h-4 w-4" />{status.isFavourite ? "Unfavourite" : "Favourite"}</SubmitButton>
+              </form>
             </div>
           </div>
         </div>
