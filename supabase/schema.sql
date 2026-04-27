@@ -206,6 +206,23 @@ create index if not exists featured_rows_position_idx on public.featured_rows (a
 create index if not exists featured_row_items_position_idx on public.featured_row_items (row_id, position);
 create index if not exists watch_parties_room_code_idx on public.watch_parties (room_code);
 
+alter table public.watch_parties replica identity full;
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    if not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'watch_parties'
+    ) then
+      alter publication supabase_realtime add table public.watch_parties;
+    end if;
+  end if;
+end;
+$$;
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql

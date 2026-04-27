@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { MediaType } from "@/types/media";
-import { Pause, Play, Radio, StepForward } from "lucide-react";
+import { Pause, Play, Radio } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -82,10 +82,24 @@ export function WatchPartyPanel(props: WatchPartyPanelProps) {
   async function send(command: string) {
     if (!props.roomCode) return;
     const supabase = createSupabaseBrowserClient();
-    await supabase
+    const state = { command, issuedAt: new Date().toISOString() };
+    const { data, error } = await supabase
       .from("watch_parties")
-      .update({ state: { command, position: 0, issuedAt: new Date().toISOString() } })
-      .eq("room_code", props.roomCode);
+      .update({ state })
+      .eq("room_code", props.roomCode)
+      .eq("host_id", userId)
+      .select("room_code")
+      .maybeSingle();
+
+    if (!error && data) {
+      const channel = supabase.channel(`watch-party-${props.roomCode}`);
+      await new Promise<void>((resolve) => {
+        channel.subscribe(() => resolve());
+        window.setTimeout(resolve, 500);
+      });
+      await channel.send({ type: "broadcast", event: "sync", payload: state });
+      void supabase.removeChannel(channel);
+    }
   }
 
   const isHost = Boolean(userId && party?.host_id === userId);
@@ -96,14 +110,13 @@ export function WatchPartyPanel(props: WatchPartyPanelProps) {
         <div>
           <p className="flex items-center gap-2 text-sm uppercase tracking-[0.22em] text-emerald-200"><Radio className="h-4 w-4" /> Watch Party</p>
           <h2 className="mt-2 text-xl font-semibold">{props.roomCode ? `Room ${props.roomCode}` : "Watch together"}</h2>
-          <p className="mt-1 text-sm text-slate-300">Host controls sync play, pause, and seek for everyone in the room.</p>
+          <p className="mt-1 text-sm text-slate-300">When the host plays, pauses, or seeks in the player, guests receive the same command.</p>
         </div>
         {props.roomCode ? (
           <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={() => navigator.clipboard?.writeText(window.location.href)} variant="glass">Copy Link</Button>
             <Button type="button" onClick={() => send("play")} disabled={!isHost}><Play className="h-4 w-4" />Play</Button>
             <Button type="button" onClick={() => send("pause")} disabled={!isHost} variant="glass"><Pause className="h-4 w-4" />Pause</Button>
-            <Button type="button" onClick={() => send("seek")} disabled={!isHost} variant="glass"><StepForward className="h-4 w-4" />Sync</Button>
           </div>
         ) : (
           <div className="flex flex-col gap-2 sm:flex-row">
