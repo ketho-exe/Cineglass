@@ -3,7 +3,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const variants = {
-  primary: "bg-white text-cine-bg hover:bg-violet-100",
+  primary: "bg-white text-cine-bg hover:bg-emerald-100",
   glass: "glass text-white hover:bg-white/14",
   danger: "bg-rose-400/18 text-rose-100 hover:bg-rose-400/28",
 };

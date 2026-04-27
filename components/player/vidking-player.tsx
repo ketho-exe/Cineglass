@@ -1,8 +1,8 @@
 "use client";
 
 import type { MediaType, PlayerProgress } from "@/types/media";
-import { AlertCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertCircle, Gauge, Maximize2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 type VidKingPlayerProps = {
   mediaType: MediaType;
@@ -31,6 +31,9 @@ type PlayerEvent = {
 export function VidKingPlayer(props: VidKingPlayerProps) {
   const [embedUrl, setEmbedUrl] = useState<string>();
   const [error, setError] = useState<string>();
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const lastSavedAt = useRef(0);
 
   useEffect(() => {
     const params = new URLSearchParams({
@@ -57,16 +60,26 @@ export function VidKingPlayer(props: VidKingPlayerProps) {
       try {
         const message = JSON.parse(event.data) as PlayerEvent;
         if (message.type !== "PLAYER_EVENT" || !message.data) return;
-        props.onProgress?.({
+        const progress = {
           tmdbId: props.tmdbId,
           mediaType: props.mediaType,
-          seasonNumber: message.data.season,
-          episodeNumber: message.data.episode,
+          seasonNumber: message.data.season ?? props.seasonNumber,
+          episodeNumber: message.data.episode ?? props.episodeNumber,
           progressSeconds: Math.floor(message.data.currentTime),
           durationSeconds: Math.floor(message.data.duration),
           progressPercent: message.data.progress,
           completed: message.data.event === "ended" || message.data.progress >= 90,
-        });
+        };
+        props.onProgress?.(progress);
+        const now = Date.now();
+        if (now - lastSavedAt.current > 15000 || progress.completed) {
+          lastSavedAt.current = now;
+          void fetch("/api/watch-progress", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(progress),
+          });
+        }
       } catch {
         return;
       }
@@ -74,6 +87,14 @@ export function VidKingPlayer(props: VidKingPlayerProps) {
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, [props]);
+
+  function changePlaybackRate(rate: number) {
+    setPlaybackRate(rate);
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ type: "PLAYER_COMMAND", data: { command: "setPlaybackRate", playbackRate: rate } }),
+      "*",
+    );
+  }
 
   if (error) {
     return (
@@ -84,9 +105,31 @@ export function VidKingPlayer(props: VidKingPlayerProps) {
   }
 
   return (
-    <div className="glass aspect-video overflow-hidden rounded-3xl bg-black">
+    <div className="glass overflow-hidden rounded-3xl bg-black">
+      <div className="flex items-center justify-between border-b border-white/10 bg-zinc-950/92 px-4 py-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{props.title}</p>
+          <p className="text-xs text-slate-400">{props.mediaType === "tv" ? `S${props.seasonNumber} E${props.episodeNumber}` : "Movie"}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Gauge className="h-4 w-4 text-slate-400" />
+          <select
+            aria-label="Playback speed"
+            value={playbackRate}
+            onChange={(event) => changePlaybackRate(Number(event.target.value))}
+            className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs text-white outline-none"
+          >
+            {[0.75, 1, 1.25, 1.5, 2].map((rate) => (
+              <option key={rate} value={rate} className="bg-zinc-950">{rate}x</option>
+            ))}
+          </select>
+          <Maximize2 className="h-4 w-4 text-slate-400" />
+        </div>
+      </div>
+      <div className="aspect-video">
       {embedUrl ? (
         <iframe
+          ref={iframeRef}
           src={embedUrl}
           title={props.title}
           allow="autoplay; fullscreen; picture-in-picture"
@@ -96,6 +139,7 @@ export function VidKingPlayer(props: VidKingPlayerProps) {
       ) : (
         <div className="flex h-full items-center justify-center text-slate-300">Loading player...</div>
       )}
+      </div>
     </div>
   );
 }

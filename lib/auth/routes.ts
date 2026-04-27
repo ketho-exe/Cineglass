@@ -14,6 +14,8 @@ const protectedPrefixes = [
   "/settings",
   "/admin",
   "/api/playback",
+  "/api/tmdb",
+  "/api/watch-progress",
 ];
 
 export function isAuthRoute(pathname: string) {

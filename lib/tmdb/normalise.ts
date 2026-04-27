@@ -31,6 +31,12 @@ export function normaliseMedia(item: TmdbMedia): NormalisedMedia | null {
     genres: Array.isArray(item.genres)
       ? item.genres.filter(isGenre)
       : undefined,
+    runtime: typeof item.runtime === "number" ? item.runtime : undefined,
+    seasons: Array.isArray(item.seasons)
+      ? item.seasons
+        .map(normaliseSeason)
+        .filter((season): season is NonNullable<ReturnType<typeof normaliseSeason>> => Boolean(season))
+      : undefined,
   };
 }
 
@@ -63,4 +69,15 @@ function isGenre(value: unknown): value is { id: number; name: string } {
     typeof (value as { id?: unknown }).id === "number" &&
     typeof (value as { name?: unknown }).name === "string"
   );
+}
+
+function normaliseSeason(value: unknown) {
+  if (typeof value !== "object" || value === null) return null;
+  const season = value as Record<string, unknown>;
+  if (typeof season.season_number !== "number" || season.season_number < 0) return null;
+  return {
+    seasonNumber: season.season_number,
+    title: stringValue(season.name) ?? `Season ${season.season_number}`,
+    episodeCount: typeof season.episode_count === "number" ? season.episode_count : 0,
+  };
 }

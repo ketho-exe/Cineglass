@@ -4,11 +4,11 @@ import type { NormalisedMedia } from "@/types/media";
 import { Play } from "lucide-react";
 import Link from "next/link";
 
-export function MediaCard({ media, progressPercent }: { media: NormalisedMedia; progressPercent?: number }) {
-  const href = `/${media.mediaType}/${media.tmdbId}`;
+export function MediaCard({ media, progressPercent, href }: { media: NormalisedMedia; progressPercent?: number; href?: string }) {
+  const cardHref = href ?? `/${media.mediaType}/${media.tmdbId}`;
   const poster = getTmdbImageUrl(media.posterPath, "w342");
   return (
-    <Link href={href} className="group block w-[150px] shrink-0 sm:w-[180px]">
+    <Link href={cardHref} prefetch className="group block w-[150px] shrink-0 sm:w-[180px]">
       <div className="relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/10 bg-white/10 shadow-glow transition group-hover:scale-[1.025] group-hover:border-white/30">
         {poster ? (
           // eslint-disable-next-line @next/next/no-img-element

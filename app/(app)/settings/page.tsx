@@ -1,5 +1,7 @@
 const settings = ["Autoplay", "Continue Watching visibility", "Default subtitle language", "Glass theme"];
 
+export const dynamic = "force-dynamic";
+
 export default function SettingsPage() {
   return (
     <section className="glass rounded-3xl p-7">

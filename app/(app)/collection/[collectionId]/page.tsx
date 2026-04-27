@@ -6,13 +6,6 @@ import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-type CollectionRow = {
-  id: string;
-  title: string;
-  description: string | null;
-  visibility: string;
-};
-
 type CollectionItemRow = {
   media_type: string;
   tmdb_id: number;

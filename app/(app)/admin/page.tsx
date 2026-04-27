@@ -1,11 +1,11 @@
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { LinkButton } from "@/components/ui/button";
-import { requireUser } from "@/lib/auth/require-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const [users, featuredRows, overrides, sessions] = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("featured_rows").select("id", { count: "exact", head: true }),

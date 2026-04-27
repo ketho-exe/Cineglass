@@ -17,6 +17,14 @@ export type NormalisedMedia = {
   firstAirDate?: string | null;
   voteAverage?: number;
   genres?: Genre[];
+  runtime?: number;
+  seasons?: SeasonSummary[];
+};
+
+export type SeasonSummary = {
+  seasonNumber: number;
+  title: string;
+  episodeCount: number;
 };
 
 export type Episode = {

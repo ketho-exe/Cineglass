@@ -50,8 +50,7 @@ create table if not exists public.watch_progress (
   completed boolean not null default false,
   last_watched_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (user_id, tmdb_id, media_type, season_number, episode_number)
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.watchlist_items (
@@ -166,6 +165,10 @@ create table if not exists public.watch_sessions (
 
 create index if not exists media_cache_lookup_idx on public.media_cache (media_type, tmdb_id);
 create index if not exists watch_progress_user_recent_idx on public.watch_progress (user_id, last_watched_at desc);
+alter table public.watch_progress
+  drop constraint if exists watch_progress_user_id_tmdb_id_media_type_season_number_episode_number_key;
+create unique index if not exists watch_progress_unique_item_idx
+  on public.watch_progress (user_id, tmdb_id, media_type, season_number, episode_number) nulls not distinct;
 create index if not exists collection_items_position_idx on public.collection_items (collection_id, position);
 create index if not exists featured_rows_position_idx on public.featured_rows (active, position);
 create index if not exists featured_row_items_position_idx on public.featured_row_items (row_id, position);
@@ -231,11 +234,37 @@ begin
 end;
 $$;
 
+create or replace function public.protect_profile_admin_fields()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() = old.id
+    and coalesce(public.current_user_role(), 'member') not in ('owner', 'admin')
+    and (new.role is distinct from old.role or new.access_status is distinct from old.access_status)
+  then
+    raise exception 'Only admins can change role or access status';
+  end if;
+  return new;
+end;
+$$;
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+drop trigger if exists profiles_protect_admin_fields on public.profiles;
+drop trigger if exists profiles_set_updated_at on public.profiles;
+drop trigger if exists watch_progress_set_updated_at on public.watch_progress;
+drop trigger if exists ratings_set_updated_at on public.ratings;
+drop trigger if exists media_notes_set_updated_at on public.media_notes;
+drop trigger if exists collections_set_updated_at on public.collections;
+drop trigger if exists featured_rows_set_updated_at on public.featured_rows;
+drop trigger if exists manual_title_overrides_set_updated_at on public.manual_title_overrides;
+create trigger profiles_protect_admin_fields before update on public.profiles for each row execute function public.protect_profile_admin_fields();
 create trigger profiles_set_updated_at before update on public.profiles for each row execute function public.set_updated_at();
 create trigger watch_progress_set_updated_at before update on public.watch_progress for each row execute function public.set_updated_at();
 create trigger ratings_set_updated_at before update on public.ratings for each row execute function public.set_updated_at();
@@ -259,7 +288,36 @@ alter table public.featured_row_items enable row level security;
 alter table public.manual_title_overrides enable row level security;
 alter table public.watch_sessions enable row level security;
 
-create policy "Profiles are visible to approved users" on public.profiles for select using (public.current_user_approved());
+drop policy if exists "Profiles are visible to approved users" on public.profiles;
+drop policy if exists "Users can read own profile" on public.profiles;
+drop policy if exists "Admins can read profiles" on public.profiles;
+drop policy if exists "Users can insert own pending profile" on public.profiles;
+drop policy if exists "Users can update own profile" on public.profiles;
+drop policy if exists "Admins can update profiles" on public.profiles;
+drop policy if exists "Approved users can read app settings" on public.app_settings;
+drop policy if exists "Admins can manage app settings" on public.app_settings;
+drop policy if exists "Approved users can read media cache" on public.media_cache;
+drop policy if exists "Admins can manage media cache" on public.media_cache;
+drop policy if exists "Users manage own watch progress" on public.watch_progress;
+drop policy if exists "Users manage own watchlist" on public.watchlist_items;
+drop policy if exists "Users manage own favourites" on public.favourite_items;
+drop policy if exists "Users manage own ratings" on public.ratings;
+drop policy if exists "Users manage own watch sessions" on public.watch_sessions;
+drop policy if exists "Users can read visible notes" on public.media_notes;
+drop policy if exists "Users manage own notes" on public.media_notes;
+drop policy if exists "Users can read visible collections" on public.collections;
+drop policy if exists "Users manage own collections" on public.collections;
+drop policy if exists "Users can read visible collection items" on public.collection_items;
+drop policy if exists "Users manage own collection items" on public.collection_items;
+drop policy if exists "Approved users can read active featured rows" on public.featured_rows;
+drop policy if exists "Admins can manage featured rows" on public.featured_rows;
+drop policy if exists "Approved users can read featured row items" on public.featured_row_items;
+drop policy if exists "Admins can manage featured row items" on public.featured_row_items;
+drop policy if exists "Approved users can read manual overrides" on public.manual_title_overrides;
+drop policy if exists "Admins can manage manual overrides" on public.manual_title_overrides;
+
+create policy "Users can read own profile" on public.profiles for select using (id = auth.uid());
+create policy "Admins can read profiles" on public.profiles for select using (public.is_admin());
 create policy "Users can insert own pending profile" on public.profiles for insert with check (id = auth.uid() and role = 'member');
 create policy "Users can update own profile" on public.profiles for update using (id = auth.uid()) with check (id = auth.uid());
 create policy "Admins can update profiles" on public.profiles for update using (public.is_admin()) with check (public.is_admin());

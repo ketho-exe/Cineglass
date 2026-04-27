@@ -35,12 +35,14 @@ describe("TMDB normalisation", () => {
         overview: "Smart, sarcastic and a little dead inside...",
         first_air_date: "2022-11-23",
         vote_average: 8.4,
+        seasons: [{ season_number: 1, name: "Season 1", episode_count: 8 }],
       }),
     ).toMatchObject({
       tmdbId: 119051,
       mediaType: "tv",
       title: "Wednesday",
       firstAirDate: "2022-11-23",
+      seasons: [{ seasonNumber: 1, title: "Season 1", episodeCount: 8 }],
     });
   });
 

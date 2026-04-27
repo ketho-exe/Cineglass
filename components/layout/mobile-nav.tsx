@@ -15,6 +15,7 @@ export function MobileNav() {
         <Link
           key={link.href}
           href={link.href}
+          prefetch
           className="flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] text-slate-300"
         >
           <link.icon className="h-5 w-5" />

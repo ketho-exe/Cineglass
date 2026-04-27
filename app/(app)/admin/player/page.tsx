@@ -1,4 +1,9 @@
-export default function AdminPlayerPage() {
+import { requireAdmin } from "@/lib/auth/require-admin";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminPlayerPage() {
+  await requireAdmin();
   return (
     <section className="glass rounded-3xl p-7">
       <h1 className="text-3xl font-bold">Player Settings</h1>

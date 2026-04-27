@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { searchTmdb } from "@/lib/tmdb/client";
 import { Search } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function SearchPage({
   searchParams,
 }: {

@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth/require-user";
 import { compactMedia, normaliseLibraryRows } from "@/lib/library/items";
 import { getDetails } from "@/lib/tmdb/client";
-import type { MediaType } from "@/types/media";
+import type { MediaType, NormalisedMedia } from "@/types/media";
 
 export async function getLibraryStatus(mediaType: MediaType, tmdbId: number) {
   const { supabase, user } = await requireUser();
@@ -43,13 +43,28 @@ export async function getContinueWatching() {
   const { supabase, user } = await requireUser();
   const { data } = await supabase
     .from("watch_progress")
-    .select("media_type, tmdb_id")
+    .select("media_type, tmdb_id, season_number, episode_number, progress_percent")
     .eq("user_id", user.id)
     .eq("completed", false)
+    .gt("progress_seconds", 0)
     .order("last_watched_at", { ascending: false })
     .limit(12);
 
-  return resolveMediaRefs(normaliseLibraryRows(data ?? []));
+  const refs = normaliseLibraryRows(data ?? []);
+  const media = await resolveMediaRefs(refs);
+  const progressByKey = new Map(
+    (data ?? []).map((row) => [
+      `${row.media_type}:${row.tmdb_id}`,
+      {
+        progressPercent: typeof row.progress_percent === "number" ? row.progress_percent : Number(row.progress_percent ?? 0),
+        watchHref: row.media_type === "tv"
+          ? `/watch/tv/${row.tmdb_id}/season/${row.season_number ?? 1}/episode/${row.episode_number ?? 1}`
+          : `/watch/movie/${row.tmdb_id}`,
+      },
+    ]),
+  );
+
+  return media.map((item) => ({ ...item, ...progressByKey.get(`${item.mediaType}:${item.tmdbId}`) }));
 }
 
 export async function getWatchedHistory() {
@@ -64,7 +79,7 @@ export async function getWatchedHistory() {
   return resolveMediaRefs(normaliseLibraryRows(data ?? []));
 }
 
-async function resolveMediaRefs(items: Array<{ mediaType: MediaType; tmdbId: number }>) {
+async function resolveMediaRefs(items: Array<{ mediaType: MediaType; tmdbId: number }>): Promise<NormalisedMedia[]> {
   const media = await Promise.all(
     items.map((item) => getDetails(item.mediaType, item.tmdbId).catch(() => null)),
   );

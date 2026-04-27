@@ -1,9 +1,9 @@
-import { requireUser } from "@/lib/auth/require-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminRowsPage() {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireAdmin();
   const { data: rows } = await supabase
     .from("featured_rows")
     .select("title, active")
