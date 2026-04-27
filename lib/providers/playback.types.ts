@@ -14,4 +14,8 @@ export type PlaybackRequest = {
   episodeSelector?: boolean;
   startTimeSeconds?: number;
   theme?: PlayerThemeConfig;
+  subtitles?: Array<{
+    url: string;
+    label: string;
+  }>;
 };

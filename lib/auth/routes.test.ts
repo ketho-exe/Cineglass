@@ -7,7 +7,7 @@ describe("auth route helpers", () => {
     expect(isProtectedRoute("/home")).toBe(true);
     expect(isProtectedRoute("/movie/299534")).toBe(true);
     expect(isProtectedRoute("/watch/movie/299534")).toBe(true);
-    expect(isProtectedRoute("/api/playback/vidking")).toBe(true);
+    expect(isProtectedRoute("/api/playback/embedmaster")).toBe(true);
     expect(isProtectedRoute("/api/tmdb/search")).toBe(true);
     expect(isProtectedRoute("/api/watch-progress")).toBe(true);
   });

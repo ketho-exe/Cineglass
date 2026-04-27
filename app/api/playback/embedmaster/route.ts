@@ -1,4 +1,4 @@
-import { buildVidKingEmbedUrl } from "@/lib/providers/vidking";
+import { buildEmbedMasterEmbedUrl } from "@/lib/providers/embedmaster";
 import type { MediaType } from "@/types/media";
 import { NextResponse } from "next/server";
 
@@ -8,7 +8,6 @@ export async function GET(request: Request) {
   const tmdbId = Number(searchParams.get("tmdbId"));
   const seasonNumber = numberParam(searchParams.get("seasonNumber"));
   const episodeNumber = numberParam(searchParams.get("episodeNumber"));
-  const startTimeSeconds = numberParam(searchParams.get("startTimeSeconds"));
 
   if (mediaType !== "movie" && mediaType !== "tv") {
     return NextResponse.json({ error: "Invalid mediaType" }, { status: 400 });
@@ -16,17 +15,12 @@ export async function GET(request: Request) {
 
   try {
     return NextResponse.json({
-      provider: "vidking",
-      embedUrl: buildVidKingEmbedUrl({
+      provider: "embedmaster",
+      embedUrl: buildEmbedMasterEmbedUrl({
         mediaType,
         tmdbId,
         seasonNumber,
         episodeNumber,
-        startTimeSeconds,
-        autoplay: searchParams.get("autoplay") === "true",
-        nextEpisode: true,
-        episodeSelector: true,
-        theme: { color: process.env.VIDKING_DEFAULT_COLOR ?? "a78bfa" },
       }),
     });
   } catch (error) {

@@ -1,4 +1,4 @@
-import { VidKingPlayer } from "@/components/player/vidking-player";
+import { EmbedMasterPlayer } from "@/components/player/embedmaster-player";
 
 export default async function WatchTvPage({
   params,
@@ -8,7 +8,7 @@ export default async function WatchTvPage({
   const { tmdbId, seasonNumber, episodeNumber } = await params;
   return (
     <div className="space-y-5">
-      <VidKingPlayer
+      <EmbedMasterPlayer
         mediaType="tv"
         tmdbId={Number(tmdbId)}
         seasonNumber={Number(seasonNumber)}

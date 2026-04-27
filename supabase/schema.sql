@@ -365,7 +365,7 @@ values (
   'global',
   '{
     "player": {
-      "provider": "vidking",
+      "provider": "embedmaster",
       "autoplay": true,
       "defaultLanguage": "en",
       "themeColor": "#A78BFA",
