@@ -8,7 +8,7 @@ export function MediaCard({ media, progressPercent, href }: { media: NormalisedM
   const cardHref = href ?? `/${media.mediaType}/${media.tmdbId}`;
   const poster = getTmdbImageUrl(media.posterPath, "w342");
   return (
-    <Link href={cardHref} prefetch className="group block w-[150px] shrink-0 sm:w-[180px]">
+    <Link href={cardHref} prefetch className="group block w-[150px] shrink-0 snap-start sm:w-[180px]">
       <div className="relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/10 bg-white/10 shadow-glow transition group-hover:scale-[1.025] group-hover:border-white/30">
         {poster ? (
           // eslint-disable-next-line @next/next/no-img-element

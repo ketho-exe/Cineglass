@@ -1,4 +1,8 @@
+"use client";
+
 import { MediaCard } from "@/components/media/media-card";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRef } from "react";
 import type { NormalisedMedia } from "@/types/media";
 
 type RowItem = NormalisedMedia & {
@@ -7,11 +11,28 @@ type RowItem = NormalisedMedia & {
 };
 
 export function MediaRow({ title, items }: { title: string; items: RowItem[] }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
   if (!items.length) return null;
+  function scrollBy(direction: number) {
+    scrollerRef.current?.scrollBy({
+      left: direction * Math.max(320, scrollerRef.current.clientWidth * 0.8),
+      behavior: "smooth",
+    });
+  }
   return (
     <section className="mt-9">
-      <h2 className="mb-4 text-xl font-semibold">{title}</h2>
-      <div className="scrollbar-hide flex gap-4 overflow-x-auto pb-4">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-xl font-semibold">{title}</h2>
+        <div className="flex gap-2">
+          <button type="button" aria-label={`Scroll ${title} left`} onClick={() => scrollBy(-1)} className="rounded-full border border-white/10 bg-white/5 p-2 transition hover:bg-white/10">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button type="button" aria-label={`Scroll ${title} right`} onClick={() => scrollBy(1)} className="rounded-full border border-white/10 bg-white/5 p-2 transition hover:bg-white/10">
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+      <div ref={scrollerRef} className="scrollbar-hide flex snap-x gap-4 overflow-x-auto scroll-smooth pb-4">
         {items.map((item) => (
           <MediaCard
             key={`${item.mediaType}-${item.tmdbId}`}

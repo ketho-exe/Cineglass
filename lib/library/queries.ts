@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth/require-user";
 import { compactMedia, normaliseLibraryRows } from "@/lib/library/items";
-import { getDetails } from "@/lib/tmdb/client";
+import { getDetails, getRecommendations } from "@/lib/tmdb/client";
 import type { MediaType, NormalisedMedia } from "@/types/media";
 
 export async function getLibraryStatus(mediaType: MediaType, tmdbId: number) {
@@ -77,6 +77,50 @@ export async function getWatchedHistory() {
     .limit(36);
 
   return resolveMediaRefs(normaliseLibraryRows(data ?? []));
+}
+
+export async function getRecommendedForUser() {
+  const { supabase, user } = await requireUser();
+  const [progress, watchlist, favourites] = await Promise.all([
+    supabase
+      .from("watch_progress")
+      .select("media_type, tmdb_id")
+      .eq("user_id", user.id)
+      .order("last_watched_at", { ascending: false })
+      .limit(4),
+    supabase
+      .from("watchlist_items")
+      .select("media_type, tmdb_id")
+      .eq("user_id", user.id)
+      .order("added_at", { ascending: false })
+      .limit(3),
+    supabase
+      .from("favourite_items")
+      .select("media_type, tmdb_id")
+      .eq("user_id", user.id)
+      .order("added_at", { ascending: false })
+      .limit(3),
+  ]);
+
+  const seeds = normaliseLibraryRows([
+    ...(progress.data ?? []),
+    ...(favourites.data ?? []),
+    ...(watchlist.data ?? []),
+  ]).slice(0, 5);
+  const recommendations = await Promise.all(
+    seeds.map((item) => getRecommendations(item.mediaType, item.tmdbId).catch(() => [])),
+  );
+  const seen = new Set(seeds.map((item) => `${item.mediaType}:${item.tmdbId}`));
+  const result: NormalisedMedia[] = [];
+  for (const item of recommendations.flat()) {
+    const key = `${item.mediaType}:${item.tmdbId}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(item);
+    }
+    if (result.length >= 18) break;
+  }
+  return result;
 }
 
 async function resolveMediaRefs(items: Array<{ mediaType: MediaType; tmdbId: number }>): Promise<NormalisedMedia[]> {

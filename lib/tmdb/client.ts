@@ -73,6 +73,11 @@ export async function getDetails(mediaType: MediaType, tmdbId: number) {
   return normaliseMedia({ ...data, media_type: mediaType });
 }
 
+export async function getRecommendations(mediaType: MediaType, tmdbId: number) {
+  const data = await tmdbFetch<{ results: Record<string, unknown>[] }>(`/${mediaType}/${tmdbId}/recommendations`);
+  return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType })));
+}
+
 export async function getSeason(tmdbId: number, seasonNumber: number) {
   const data = await tmdbFetch<{ episodes: Array<Record<string, unknown>> }>(
     `/tv/${tmdbId}/season/${seasonNumber}`,

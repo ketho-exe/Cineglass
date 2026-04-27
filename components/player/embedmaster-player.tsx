@@ -1,7 +1,8 @@
 "use client";
 
 import type { MediaType, PlayerProgress } from "@/types/media";
-import { AlertCircle, Gauge, Maximize2 } from "lucide-react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type EmbedMasterPlayerProps = {
@@ -13,6 +14,7 @@ type EmbedMasterPlayerProps = {
   startTimeSeconds?: number;
   autoplay?: boolean;
   onProgress?: (progress: PlayerProgress) => void;
+  partyCode?: string;
 };
 
 type EmbedMasterEvent = {
@@ -29,9 +31,9 @@ type EmbedMasterEvent = {
 export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
   const [embedUrl, setEmbedUrl] = useState<string>();
   const [error, setError] = useState<string>();
-  const [playbackRate, setPlaybackRate] = useState(1);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastSavedAt = useRef(0);
+  const lastPartyCommandAt = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const params = new URLSearchParams({
@@ -77,6 +79,9 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
         completed: message.event === "ended" || progressPercent >= 90,
       };
       props.onProgress?.(progress);
+      if (props.partyCode && ["play", "pause", "seeked"].includes(message.event ?? "")) {
+        void publishPartyState(props.partyCode, message.event ?? "progress", Math.floor(currentTime));
+      }
 
       const now = Date.now();
       if (now - lastSavedAt.current > 15000 || progress.completed) {
@@ -92,6 +97,34 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
     return () => window.removeEventListener("message", handleMessage);
   }, [props]);
 
+  useEffect(() => {
+    if (!props.partyCode) return;
+    const supabase = createSupabaseBrowserClient();
+    const channel = supabase
+      .channel(`watch-party-${props.partyCode}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "watch_parties",
+          filter: `room_code=eq.${props.partyCode}`,
+        },
+        (payload) => {
+          const state = payload.new.state as { command?: string; position?: number; issuedAt?: string } | null;
+          if (!state?.command || state.issuedAt === lastPartyCommandAt.current) return;
+          lastPartyCommandAt.current = state.issuedAt;
+          if (typeof state.position === "number") sendCommand("seek", state.position);
+          sendCommand(state.command);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [props.partyCode]);
+
   function sendCommand(command: string, value?: number) {
     iframeRef.current?.contentWindow?.postMessage(
       {
@@ -103,11 +136,6 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
     );
   }
 
-  function changePlaybackRate(rate: number) {
-    setPlaybackRate(rate);
-    sendCommand("speed", rate);
-  }
-
   if (error) {
     return (
       <div className="flex aspect-video items-center justify-center rounded-3xl border border-rose-300/20 bg-rose-950/30 text-rose-100">
@@ -117,43 +145,37 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
   }
 
   return (
-    <div className="glass overflow-hidden rounded-3xl bg-black">
-      <div className="flex items-center justify-between border-b border-white/10 bg-zinc-950/92 px-4 py-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{props.title}</p>
-          <p className="text-xs text-slate-400">{props.mediaType === "tv" ? `S${props.seasonNumber} E${props.episodeNumber}` : "Movie"}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Gauge className="h-4 w-4 text-slate-400" />
-          <select
-            aria-label="Playback speed"
-            value={playbackRate}
-            onChange={(event) => changePlaybackRate(Number(event.target.value))}
-            className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs text-white outline-none"
-          >
-            {[0.75, 1, 1.25, 1.5, 2].map((rate) => (
-              <option key={rate} value={rate} className="bg-zinc-950">{rate}x</option>
-            ))}
-          </select>
-          <button type="button" aria-label="Fullscreen" onClick={() => sendCommand("fullscreen")}>
-            <Maximize2 className="h-4 w-4 text-slate-400" />
-          </button>
-        </div>
-      </div>
-      <div className="aspect-video">
-        {embedUrl ? (
-          <iframe
-            ref={iframeRef}
-            src={embedUrl}
-            title={props.title}
-            allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *"
-            allowFullScreen
-            className="h-full w-full border-0 bg-black"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-slate-300">Loading player...</div>
-        )}
-      </div>
+    <div className="aspect-video overflow-hidden rounded-2xl bg-black">
+      {embedUrl ? (
+        <iframe
+          ref={iframeRef}
+          src={embedUrl}
+          title={props.title}
+          allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *"
+          allowFullScreen
+          className="h-full w-full border-0 bg-black"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center text-slate-300">Loading player...</div>
+      )}
     </div>
   );
+}
+
+async function publishPartyState(roomCode: string, command: string, position: number) {
+  const supabase = createSupabaseBrowserClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from("watch_parties")
+    .update({
+      state: {
+        command: command === "seeked" ? "seek" : command,
+        position,
+        issuedAt: new Date().toISOString(),
+      },
+    })
+    .eq("room_code", roomCode)
+    .eq("host_id", user.id);
 }

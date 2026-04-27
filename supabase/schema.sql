@@ -7,9 +7,27 @@ create table if not exists public.profiles (
   role text not null default 'member' check (role in ('owner', 'admin', 'member')),
   access_status text not null default 'pending' check (access_status in ('pending', 'approved', 'blocked')),
   favourite_genres text[] not null default '{}',
+  home_preferences jsonb not null default '{
+    "continueWatching": true,
+    "watchlist": true,
+    "recommended": true,
+    "trendingMovies": true,
+    "trendingTv": true,
+    "anime": true
+  }'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.profiles
+  add column if not exists home_preferences jsonb not null default '{
+    "continueWatching": true,
+    "watchlist": true,
+    "recommended": true,
+    "trendingMovies": true,
+    "trendingTv": true,
+    "anime": true
+  }'::jsonb;
 
 create table if not exists public.app_settings (
   id uuid primary key default gen_random_uuid(),
@@ -163,6 +181,20 @@ create table if not exists public.watch_sessions (
   user_agent text
 );
 
+create table if not exists public.watch_parties (
+  id uuid primary key default gen_random_uuid(),
+  room_code text unique not null,
+  host_id uuid not null references public.profiles(id) on delete cascade,
+  tmdb_id integer not null,
+  media_type text not null check (media_type in ('movie', 'tv')),
+  season_number integer,
+  episode_number integer,
+  state jsonb not null default '{}'::jsonb,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists media_cache_lookup_idx on public.media_cache (media_type, tmdb_id);
 create index if not exists watch_progress_user_recent_idx on public.watch_progress (user_id, last_watched_at desc);
 alter table public.watch_progress
@@ -172,6 +204,7 @@ create unique index if not exists watch_progress_unique_item_idx
 create index if not exists collection_items_position_idx on public.collection_items (collection_id, position);
 create index if not exists featured_rows_position_idx on public.featured_rows (active, position);
 create index if not exists featured_row_items_position_idx on public.featured_row_items (row_id, position);
+create index if not exists watch_parties_room_code_idx on public.watch_parties (room_code);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -264,6 +297,7 @@ drop trigger if exists media_notes_set_updated_at on public.media_notes;
 drop trigger if exists collections_set_updated_at on public.collections;
 drop trigger if exists featured_rows_set_updated_at on public.featured_rows;
 drop trigger if exists manual_title_overrides_set_updated_at on public.manual_title_overrides;
+drop trigger if exists watch_parties_set_updated_at on public.watch_parties;
 create trigger profiles_protect_admin_fields before update on public.profiles for each row execute function public.protect_profile_admin_fields();
 create trigger profiles_set_updated_at before update on public.profiles for each row execute function public.set_updated_at();
 create trigger watch_progress_set_updated_at before update on public.watch_progress for each row execute function public.set_updated_at();
@@ -272,6 +306,7 @@ create trigger media_notes_set_updated_at before update on public.media_notes fo
 create trigger collections_set_updated_at before update on public.collections for each row execute function public.set_updated_at();
 create trigger featured_rows_set_updated_at before update on public.featured_rows for each row execute function public.set_updated_at();
 create trigger manual_title_overrides_set_updated_at before update on public.manual_title_overrides for each row execute function public.set_updated_at();
+create trigger watch_parties_set_updated_at before update on public.watch_parties for each row execute function public.set_updated_at();
 
 alter table public.profiles enable row level security;
 alter table public.app_settings enable row level security;
@@ -287,6 +322,7 @@ alter table public.featured_rows enable row level security;
 alter table public.featured_row_items enable row level security;
 alter table public.manual_title_overrides enable row level security;
 alter table public.watch_sessions enable row level security;
+alter table public.watch_parties enable row level security;
 
 drop policy if exists "Profiles are visible to approved users" on public.profiles;
 drop policy if exists "Users can read own profile" on public.profiles;
@@ -315,6 +351,9 @@ drop policy if exists "Approved users can read featured row items" on public.fea
 drop policy if exists "Admins can manage featured row items" on public.featured_row_items;
 drop policy if exists "Approved users can read manual overrides" on public.manual_title_overrides;
 drop policy if exists "Admins can manage manual overrides" on public.manual_title_overrides;
+drop policy if exists "Approved users can read watch parties" on public.watch_parties;
+drop policy if exists "Approved users can create watch parties" on public.watch_parties;
+drop policy if exists "Hosts can update watch parties" on public.watch_parties;
 
 create policy "Users can read own profile" on public.profiles for select using (id = auth.uid());
 create policy "Admins can read profiles" on public.profiles for select using (public.is_admin());
@@ -359,6 +398,9 @@ create policy "Admins can manage featured row items" on public.featured_row_item
 
 create policy "Approved users can read manual overrides" on public.manual_title_overrides for select using (public.current_user_approved());
 create policy "Admins can manage manual overrides" on public.manual_title_overrides for all using (public.is_admin()) with check (public.is_admin());
+create policy "Approved users can read watch parties" on public.watch_parties for select using (public.current_user_approved());
+create policy "Approved users can create watch parties" on public.watch_parties for insert with check (host_id = auth.uid() and public.current_user_approved());
+create policy "Hosts can update watch parties" on public.watch_parties for update using (host_id = auth.uid()) with check (host_id = auth.uid());
 
 insert into public.app_settings (key, value)
 values (
