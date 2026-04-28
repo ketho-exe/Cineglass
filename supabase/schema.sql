@@ -7,6 +7,7 @@ create table if not exists public.profiles (
   role text not null default 'member' check (role in ('owner', 'admin', 'member')),
   access_status text not null default 'pending' check (access_status in ('pending', 'approved', 'blocked')),
   favourite_genres text[] not null default '{}',
+  player_provider text not null default 'embedmaster' check (player_provider in ('embedmaster', 'vidking')),
   home_preferences jsonb not null default '{
     "continueWatching": true,
     "watchlist": true,
@@ -28,6 +29,15 @@ alter table public.profiles
     "trendingTv": true,
     "anime": true
   }'::jsonb;
+
+alter table public.profiles
+  add column if not exists player_provider text not null default 'embedmaster';
+
+alter table public.profiles
+  drop constraint if exists profiles_player_provider_check;
+
+alter table public.profiles
+  add constraint profiles_player_provider_check check (player_provider in ('embedmaster', 'vidking'));
 
 create table if not exists public.app_settings (
   id uuid primary key default gen_random_uuid(),

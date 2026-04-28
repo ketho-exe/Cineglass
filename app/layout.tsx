@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "CineGlass",
-  description: "A private glassmorphism streaming front-end powered by TMDB and EmbedMaster.",
+  description: "A private glassmorphism streaming front-end powered by TMDB with selectable EmbedMaster and VidKing playback.",
   robots: { index: false, follow: false },
 };
 

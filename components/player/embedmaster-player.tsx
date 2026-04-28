@@ -1,6 +1,7 @@
 "use client";
 
 import type { MediaType, PlayerProgress } from "@/types/media";
+import type { PlaybackProvider } from "@/lib/providers/playback.types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -15,6 +16,7 @@ type EmbedMasterPlayerProps = {
   autoplay?: boolean;
   onProgress?: (progress: PlayerProgress) => void;
   partyCode?: string;
+  provider?: PlaybackProvider;
 };
 
 type EmbedMasterEvent = {
@@ -39,6 +41,7 @@ type PartyCommand = {
 };
 
 export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
+  const provider = props.provider ?? "embedmaster";
   const [embedUrl, setEmbedUrl] = useState<string>();
   const [error, setError] = useState<string>();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -55,7 +58,7 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
     if (props.seasonNumber) params.set("seasonNumber", String(props.seasonNumber));
     if (props.episodeNumber) params.set("episodeNumber", String(props.episodeNumber));
 
-    fetch(`/api/playback/embedmaster?${params.toString()}`)
+    fetch(`/api/playback/${provider}?${params.toString()}`)
       .then((response) => {
         if (!response.ok) throw new Error("Unable to create player URL");
         return response.json() as Promise<{ embedUrl: string }>;
@@ -65,7 +68,7 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
         setError(undefined);
       })
       .catch((reason: Error) => setError(reason.message));
-  }, [props.mediaType, props.tmdbId, props.seasonNumber, props.episodeNumber, props.autoplay]);
+  }, [provider, props.mediaType, props.tmdbId, props.seasonNumber, props.episodeNumber, props.autoplay]);
 
   useEffect(() => {
     if (!embedUrl) return;
@@ -90,15 +93,18 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
       const message = parsePlayerMessage(event.data);
-      if (!message || message.source !== "embedmaster_player") return;
+      if (!message) return;
+      const eventName = getEventName(message);
+      if (!eventName) return;
 
-      const currentTime = readTime(message.info);
-      const duration = Number(message.info?.duration ?? 0);
-      if (!currentTime && !["play", "pause", "ended"].includes(message.event ?? "")) return;
+      const info = getEventInfo(message);
+      const currentTime = readTime(info);
+      const duration = Number(info?.duration ?? 0);
+      if (!currentTime && !["play", "pause", "ended"].includes(eventName)) return;
       currentPositionRef.current = currentTime;
 
       const rawProgressPercent = Number(
-        message.info?.percent ?? message.info?.progress ?? (duration ? (currentTime / duration) * 100 : 0),
+        info?.percent ?? info?.progress ?? (duration ? (currentTime / duration) * 100 : 0),
       );
       const progressPercent = rawProgressPercent > 0 && rawProgressPercent <= 1
         ? rawProgressPercent * 100
@@ -111,11 +117,11 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
         progressSeconds: Math.floor(currentTime),
         durationSeconds: duration ? Math.floor(duration) : undefined,
         progressPercent,
-        completed: message.event === "ended" || progressPercent >= 90,
+        completed: eventName === "ended" || progressPercent >= 90,
       };
       props.onProgress?.(progress);
-      if (props.partyCode && ["play", "pause", "seeked"].includes(message.event ?? "")) {
-        void publishPartyCommand(props.partyCode, message.event === "seeked" ? "seek" : message.event ?? "progress", Math.floor(currentTime));
+      if (provider === "embedmaster" && props.partyCode && ["play", "pause", "seeked"].includes(eventName)) {
+        void publishPartyCommand(props.partyCode, eventName === "seeked" ? "seek" : eventName, Math.floor(currentTime));
       }
 
       const now = Date.now();
@@ -126,16 +132,18 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [props]);
+  }, [provider, props]);
 
   useEffect(() => {
-    if (!props.partyCode) return;
+    if (provider !== "embedmaster" || !props.partyCode) return;
     const supabase = createSupabaseBrowserClient();
     function applyPartyCommand(state: PartyCommand | null) {
       if (!state?.command || state.issuedAt === lastPartyCommandAt.current) return;
       lastPartyCommandAt.current = state.issuedAt;
-      if (typeof state.position === "number" && state.command !== "seek") sendCommand("seek", state.position);
-      sendCommand(state.command, state.command === "seek" ? state.position : undefined);
+      if (typeof state.position === "number" && state.command !== "seek") {
+        postPlayerCommand(iframeRef.current, provider, "seek", state.position);
+      }
+      postPlayerCommand(iframeRef.current, provider, state.command, state.command === "seek" ? state.position : undefined);
     }
 
     const channel = supabase
@@ -161,18 +169,7 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [props.partyCode]);
-
-  function sendCommand(command: string, value?: number) {
-    iframeRef.current?.contentWindow?.postMessage(
-      {
-        source: "embedmaster_player_command",
-        command,
-        value,
-      },
-      "*",
-    );
-  }
+  }, [provider, props.partyCode]);
 
   if (error) {
     return (
@@ -200,7 +197,14 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
   );
 }
 
-function parsePlayerMessage(data: unknown): EmbedMasterEvent | null {
+function postPlayerCommand(target: HTMLIFrameElement | null, provider: PlaybackProvider, command: string, value?: number) {
+  const message = provider === "embedmaster"
+    ? { source: "embedmaster_player_command", command, value }
+    : JSON.stringify({ type: "PLAYER_COMMAND", data: { command, value } });
+  target?.contentWindow?.postMessage(message, "*");
+}
+
+function parsePlayerMessage(data: unknown): (EmbedMasterEvent & { type?: string; data?: EmbedMasterEvent["info"] & { event?: string } }) | null {
   if (typeof data === "string") {
     try {
       return JSON.parse(data) as EmbedMasterEvent;
@@ -209,6 +213,18 @@ function parsePlayerMessage(data: unknown): EmbedMasterEvent | null {
     }
   }
   return data && typeof data === "object" ? data as EmbedMasterEvent : null;
+}
+
+function getEventName(message: ReturnType<typeof parsePlayerMessage>) {
+  if (message?.source === "embedmaster_player") return message.event;
+  if (message?.type === "PLAYER_EVENT") return message.data?.event;
+  return undefined;
+}
+
+function getEventInfo(message: ReturnType<typeof parsePlayerMessage>) {
+  if (message?.source === "embedmaster_player") return message.info;
+  if (message?.type === "PLAYER_EVENT") return message.data;
+  return undefined;
 }
 
 function readTime(info: EmbedMasterEvent["info"]) {

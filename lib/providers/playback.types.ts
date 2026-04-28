@@ -1,5 +1,7 @@
 import type { MediaType } from "@/types/media";
 
+export type PlaybackProvider = "embedmaster" | "vidking";
+
 export type PlayerThemeConfig = {
   color?: string;
 };

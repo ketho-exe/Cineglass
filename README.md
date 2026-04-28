@@ -1,6 +1,6 @@
 # CineGlass
 
-Private streaming-style front end powered by TMDB metadata, Supabase Auth/Postgres, and EmbedMaster embeds.
+Private streaming-style front end powered by TMDB metadata, Supabase Auth/Postgres, and selectable EmbedMaster/VidKing embeds.
 
 ## Required Environment Variables
 
@@ -16,6 +16,9 @@ TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p
 
 EMBEDMASTER_BASE_URL=https://embedmaster.link
 EMBEDMASTER_PLAYER_ID=k8i9pm5nsn3nrj0d
+
+VIDKING_BASE_EMBED_URL=https://www.vidking.net/embed
+VIDKING_DEFAULT_COLOR=a78bfa
 
 NEXT_PUBLIC_APP_NAME=CineGlass
 NEXT_PUBLIC_APP_URL=https://your-vercel-domain.vercel.app
