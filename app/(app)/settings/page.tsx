@@ -12,6 +12,7 @@ const settings = [
   ["trendingMovies", "Trending Movies"],
   ["trendingTv", "Trending TV"],
   ["anime", "Anime Picks"],
+  ["smartCategories", "Smart categories and moods"],
 ] as const;
 
 const defaults = {
@@ -21,6 +22,7 @@ const defaults = {
   trendingMovies: true,
   trendingTv: true,
   anime: true,
+  smartCategories: true,
 };
 
 export default async function SettingsPage() {

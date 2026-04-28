@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { normalisePlaybackProvider } from "@/lib/providers/preferences";
 import { revalidatePath } from "next/cache";
 
-const keys = ["continueWatching", "watchlist", "recommended", "trendingMovies", "trendingTv", "anime"];
+const keys = ["continueWatching", "watchlist", "recommended", "trendingMovies", "trendingTv", "anime", "smartCategories"];
 
 export async function updateHomePreferences(formData: FormData) {
   const { supabase, user } = await requireUser();

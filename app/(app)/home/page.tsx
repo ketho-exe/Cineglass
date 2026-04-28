@@ -3,7 +3,7 @@ import { HeroCarousel } from "@/components/media/hero-carousel";
 import { MediaRow } from "@/components/media/media-row";
 import { requireUser } from "@/lib/auth/require-user";
 import { getContinueWatching, getRecommendedForUser, getUserMediaList } from "@/lib/library/queries";
-import { discoverAnime, getTrending } from "@/lib/tmdb/client";
+import { discoverAnime, discoverFiltered, getTrending } from "@/lib/tmdb/client";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +14,7 @@ const defaultPreferences = {
   trendingMovies: true,
   trendingTv: true,
   anime: true,
+  smartCategories: true,
 };
 
 export default async function HomePage() {
@@ -25,13 +26,15 @@ export default async function HomePage() {
     .maybeSingle();
   const preferences = { ...defaultPreferences, ...(profile?.home_preferences as Partial<typeof defaultPreferences> | null) };
 
-  const [continueWatching, watchlist, recommended, movies, tv, anime] = await Promise.all([
+  const [continueWatching, watchlist, recommended, movies, tv, anime, topRated, feelGood] = await Promise.all([
     preferences.continueWatching ? getContinueWatching().catch(() => []) : [],
     preferences.watchlist ? getUserMediaList("watchlist_items").catch(() => []) : [],
     preferences.recommended ? getRecommendedForUser().catch(() => []) : [],
     preferences.trendingMovies ? getTrending("movie").catch(() => []) : [],
     preferences.trendingTv ? getTrending("tv").catch(() => []) : [],
     preferences.anime ? discoverAnime().catch(() => []) : [],
+    preferences.smartCategories ? discoverFiltered({ mediaType: "movie", minRating: 8, sortBy: "vote_average.desc" }).then((data) => data.results).catch(() => []) : [],
+    preferences.smartCategories ? discoverFiltered({ mediaType: "movie", mood: "feel-good" }).then((data) => data.results).catch(() => []) : [],
   ]);
 
   return (
@@ -43,6 +46,8 @@ export default async function HomePage() {
       <MediaRow title="Watchlist" items={watchlist} viewAllHref="/browse/watchlist" />
       <MediaRow title="Trending Movies" items={movies} viewAllHref="/browse/trending-movies" />
       <MediaRow title="Trending TV" items={tv} viewAllHref="/browse/trending-tv" />
+      <MediaRow title="Top Rated" items={topRated} viewAllHref="/browse/top-rated" />
+      <MediaRow title="Feel-good Picks" items={feelGood} viewAllHref="/browse/feel-good" />
       <MediaRow title="Anime Picks" items={anime} viewAllHref="/browse/anime" />
     </>
   );

@@ -120,7 +120,8 @@ create table if not exists public.media_notes (
   note text not null,
   visibility text not null default 'private' check (visibility in ('private', 'group')),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  unique (user_id, tmdb_id, media_type)
 );
 
 create table if not exists public.collections (

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/sync/trending",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}

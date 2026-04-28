@@ -1,9 +1,19 @@
-import { normaliseMedia, normaliseSearchResults } from "@/lib/tmdb/normalise";
+import { normaliseMedia, normalisePerson, normaliseSearchResults } from "@/lib/tmdb/normalise";
 import type { Episode, MediaType } from "@/types/media";
 
 const baseUrl = process.env.TMDB_BASE_URL ?? "https://api.themoviedb.org/3";
 
 type QueryValue = string | number | boolean | undefined;
+type DiscoverFilters = {
+  mediaType?: MediaType;
+  genreId?: number;
+  year?: number;
+  minRating?: number;
+  language?: string;
+  sortBy?: string;
+  page?: number;
+  mood?: "feel-good" | "dark" | "mind-bending";
+};
 
 export function getTmdbImageUrl(
   path: string | null | undefined,
@@ -52,6 +62,17 @@ export async function searchTmdb(query: string, type: "multi" | MediaType = "mul
   };
 }
 
+export async function searchPersonFilmography(query: string) {
+  const data = await tmdbFetch<{ results: Array<{ id?: number }> }>("/search/person", {
+    query,
+    page: 1,
+    include_adult: false,
+  });
+  const personId = data.results.find((person) => typeof person.id === "number")?.id;
+  if (!personId) return [];
+  return getPersonCredits(personId).then((items) => items.slice(0, 18));
+}
+
 export async function getTrending(mediaType: MediaType) {
   const data = await tmdbFetch<{ results: Record<string, unknown>[] }>(`/trending/${mediaType}/week`);
   return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType })));
@@ -69,6 +90,30 @@ export async function discoverByGenre(mediaType: MediaType, genreId: number, pag
     page,
   });
   return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType })));
+}
+
+export async function discoverFiltered(filters: DiscoverFilters = {}) {
+  const mediaType = filters.mediaType ?? "movie";
+  const mood = getMoodFilters(filters.mood, mediaType);
+  const data = await tmdbFetch<{ page: number; results: Record<string, unknown>[]; total_pages: number; total_results: number }>(
+    `/discover/${mediaType}`,
+    {
+      with_genres: filters.genreId ?? mood.genreId,
+      primary_release_year: mediaType === "movie" ? filters.year : undefined,
+      first_air_date_year: mediaType === "tv" ? filters.year : undefined,
+      "vote_average.gte": filters.minRating,
+      with_original_language: filters.language,
+      sort_by: filters.sortBy ?? mood.sortBy ?? "popularity.desc",
+      page: filters.page ?? 1,
+      include_adult: false,
+    },
+  );
+  return {
+    page: data.page,
+    results: normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType }))),
+    totalPages: data.total_pages,
+    totalResults: data.total_results,
+  };
 }
 
 export async function discoverAnime() {
@@ -108,4 +153,31 @@ export async function getSeason(tmdbId: number, seasonNumber: number) {
       runtime: typeof episode.runtime === "number" ? episode.runtime : null,
     }),
   );
+}
+
+export async function getPerson(personId: number) {
+  const data = await tmdbFetch<Record<string, unknown>>(`/person/${personId}`);
+  return normalisePerson(data);
+}
+
+export async function getPersonCredits(personId: number) {
+  const data = await tmdbFetch<{ cast: Record<string, unknown>[]; crew: Record<string, unknown>[] }>(
+    `/person/${personId}/combined_credits`,
+  );
+  const cast = normaliseSearchResults((data.cast ?? []).filter((item) => item.media_type === "movie" || item.media_type === "tv"));
+  const crew = normaliseSearchResults((data.crew ?? []).filter((item) => item.media_type === "movie" || item.media_type === "tv"));
+  const seen = new Set<string>();
+  return [...cast, ...crew].filter((item) => {
+    const key = `${item.mediaType}:${item.tmdbId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getMoodFilters(mood: DiscoverFilters["mood"], mediaType: MediaType) {
+  if (mood === "feel-good") return { genreId: mediaType === "movie" ? 35 : 35, sortBy: "vote_average.desc" };
+  if (mood === "dark") return { genreId: mediaType === "movie" ? 53 : 80, sortBy: "popularity.desc" };
+  if (mood === "mind-bending") return { genreId: mediaType === "movie" ? 878 : 10765, sortBy: "vote_average.desc" };
+  return {};
 }

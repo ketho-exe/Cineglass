@@ -19,6 +19,26 @@ export type NormalisedMedia = {
   genres?: Genre[];
   runtime?: number;
   seasons?: SeasonSummary[];
+  cast?: CreditPerson[];
+  crew?: CreditPerson[];
+};
+
+export type CreditPerson = {
+  id: number;
+  name: string;
+  character?: string;
+  job?: string;
+  profilePath?: string | null;
+};
+
+export type PersonDetails = {
+  id: number;
+  name: string;
+  biography?: string;
+  birthday?: string | null;
+  placeOfBirth?: string | null;
+  profilePath?: string | null;
+  knownForDepartment?: string;
 };
 
 export type SeasonSummary = {

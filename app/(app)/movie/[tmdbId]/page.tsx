@@ -1,4 +1,6 @@
 import { toggleFavourite, toggleWatchlist } from "@/app/(app)/library-actions";
+import { MediaExtras } from "@/components/media/media-extras";
+import { MediaFeedback } from "@/components/media/media-feedback";
 import { LinkButton, SubmitButton } from "@/components/ui/button";
 import { getLibraryStatus } from "@/lib/library/queries";
 import { getDetails, getTmdbImageUrl } from "@/lib/tmdb/client";
@@ -19,7 +21,7 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ tm
   const poster = getTmdbImageUrl(media.posterPath, "w500");
 
   return (
-    <article>
+    <article className="space-y-8">
       <section className="relative min-h-[520px] overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900">
         {backdrop ? <Image src={backdrop} alt="" fill priority sizes="100vw" className="object-cover" /> : null}
         <div className="absolute inset-0 bg-gradient-to-r from-cine-bg via-cine-bg/68 to-transparent" />
@@ -61,6 +63,8 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ tm
           </div>
         </div>
       </section>
+      <MediaExtras media={media} />
+      <MediaFeedback mediaType="movie" tmdbId={media.tmdbId} />
     </article>
   );
 }

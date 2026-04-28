@@ -1,4 +1,6 @@
 import { toggleFavourite, toggleWatchlist } from "@/app/(app)/library-actions";
+import { MediaExtras } from "@/components/media/media-extras";
+import { MediaFeedback } from "@/components/media/media-feedback";
 import { LinkButton, SubmitButton } from "@/components/ui/button";
 import { getLibraryStatus } from "@/lib/library/queries";
 import { getDetails, getSeason, getTmdbImageUrl } from "@/lib/tmdb/client";
@@ -92,6 +94,8 @@ export default async function TvDetailPage({
           ))}
         </div>
       </section>
+      <MediaExtras media={media} />
+      <MediaFeedback mediaType="tv" tmdbId={media.tmdbId} />
     </article>
   );
 }

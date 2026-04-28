@@ -1,5 +1,5 @@
 import { normaliseGenreIds } from "./genres";
-import type { NormalisedMedia } from "@/types/media";
+import type { CreditPerson, NormalisedMedia, PersonDetails } from "@/types/media";
 
 type TmdbMedia = Record<string, unknown>;
 
@@ -38,6 +38,8 @@ export function normaliseMedia(item: TmdbMedia): NormalisedMedia | null {
         .map(normaliseSeason)
         .filter((season): season is NonNullable<ReturnType<typeof normaliseSeason>> => Boolean(season))
       : undefined,
+    cast: normaliseCredits(item.credits, "cast"),
+    crew: normaliseCredits(item.credits, "crew"),
   };
 }
 
@@ -80,5 +82,39 @@ function normaliseSeason(value: unknown) {
     seasonNumber: season.season_number,
     title: stringValue(season.name) ?? `Season ${season.season_number}`,
     episodeCount: typeof season.episode_count === "number" ? season.episode_count : 0,
+  };
+}
+
+function normaliseCredits(value: unknown, type: "cast" | "crew"): CreditPerson[] | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const credits = (value as Record<string, unknown>)[type];
+  if (!Array.isArray(credits)) return undefined;
+  return credits
+    .map((credit): CreditPerson | null => {
+      if (typeof credit !== "object" || credit === null) return null;
+      const row = credit as Record<string, unknown>;
+      if (typeof row.id !== "number" || typeof row.name !== "string") return null;
+      return {
+        id: row.id,
+        name: row.name,
+        character: stringValue(row.character),
+        job: stringValue(row.job),
+        profilePath: nullableString(row.profile_path),
+      };
+    })
+    .filter((credit): credit is CreditPerson => Boolean(credit))
+    .slice(0, type === "cast" ? 14 : 8);
+}
+
+export function normalisePerson(item: Record<string, unknown>): PersonDetails | null {
+  if (typeof item.id !== "number" || typeof item.name !== "string") return null;
+  return {
+    id: item.id,
+    name: item.name,
+    biography: stringValue(item.biography),
+    birthday: nullableString(item.birthday),
+    placeOfBirth: nullableString(item.place_of_birth),
+    profilePath: nullableString(item.profile_path),
+    knownForDepartment: stringValue(item.known_for_department),
   };
 }

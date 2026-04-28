@@ -1,6 +1,6 @@
 import { MediaCard } from "@/components/media/media-card";
 import { getContinueWatching, getRecommendedForUser, getUserMediaList } from "@/lib/library/queries";
-import { discoverAnime, getPopular, getTrending } from "@/lib/tmdb/client";
+import { discoverAnime, discoverFiltered, getPopular, getTrending } from "@/lib/tmdb/client";
 import type { NormalisedMedia } from "@/types/media";
 import { notFound } from "next/navigation";
 
@@ -13,6 +13,11 @@ const rowTitles: Record<string, string> = {
   "trending-movies": "Trending Movies",
   "trending-tv": "Trending TV",
   anime: "Anime Picks",
+  "top-rated": "Top Rated",
+  underrated: "Underrated Gems",
+  "feel-good": "Feel-good Picks",
+  dark: "Dark & Gritty",
+  "mind-bending": "Mind-bending Movies",
 };
 
 export default async function BrowseRowPage({
@@ -49,5 +54,10 @@ async function getRowItems(row: string): Promise<Array<NormalisedMedia & { watch
   if (row === "trending-movies") return getPopular("movie").catch(() => getTrending("movie").catch(() => []));
   if (row === "trending-tv") return getPopular("tv").catch(() => getTrending("tv").catch(() => []));
   if (row === "anime") return discoverAnime().catch(() => []);
+  if (row === "top-rated") return discoverFiltered({ mediaType: "movie", minRating: 8, sortBy: "vote_average.desc" }).then((data) => data.results).catch(() => []);
+  if (row === "underrated") return discoverFiltered({ mediaType: "movie", minRating: 7, sortBy: "vote_count.asc" }).then((data) => data.results).catch(() => []);
+  if (row === "feel-good" || row === "dark" || row === "mind-bending") {
+    return discoverFiltered({ mediaType: "movie", mood: row }).then((data) => data.results).catch(() => []);
+  }
   return [];
 }
