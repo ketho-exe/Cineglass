@@ -1,3 +1,4 @@
+import { CategoryRail } from "@/components/media/category-rail";
 import { MediaCard } from "@/components/media/media-card";
 import { Button } from "@/components/ui/button";
 import { searchTmdb } from "@/lib/tmdb/client";
@@ -26,7 +27,7 @@ export default async function SearchPage({
               name="q"
               defaultValue={query}
               placeholder="Search movies, TV shows, anime..."
-              className="w-full rounded-full border border-white/10 bg-white/10 py-3 pl-12 pr-4 text-white outline-none focus:border-violet-300"
+            className="w-full rounded-full border border-white/10 bg-white/10 py-3 pl-12 pr-4 text-white outline-none transition focus:border-emerald-300"
             />
           </label>
           <select name="type" defaultValue={type} className="rounded-full border border-white/10 bg-zinc-900 px-4 py-3 text-white">
@@ -37,11 +38,18 @@ export default async function SearchPage({
           <Button type="submit">Search</Button>
         </form>
       </section>
-      <section className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
-        {data.results.map((item) => (
-          <MediaCard key={`${item.mediaType}-${item.tmdbId}`} media={item} />
-        ))}
-      </section>
+      {query ? (
+        <section className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
+          {data.results.map((item) => (
+            <MediaCard key={`${item.mediaType}-${item.tmdbId}`} media={item} className="w-full sm:w-full" />
+          ))}
+        </section>
+      ) : (
+        <>
+          <CategoryRail mediaType="movie" />
+          <CategoryRail mediaType="tv" />
+        </>
+      )}
     </div>
   );
 }

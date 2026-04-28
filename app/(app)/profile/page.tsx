@@ -12,7 +12,7 @@ export default async function ProfilePage() {
 
   return (
     <section className="glass rounded-3xl p-7">
-      <p className="text-sm uppercase tracking-[0.22em] text-violet-200">Profile</p>
+      <p className="text-sm uppercase tracking-[0.22em] text-emerald-200">Profile</p>
       <h1 className="mt-2 text-3xl font-bold">{profile?.display_name ?? user.email ?? "Member"}</h1>
       <p className="mt-3 text-slate-300">
         {profile?.role ?? "member"} • {profile?.access_status ?? "pending"}

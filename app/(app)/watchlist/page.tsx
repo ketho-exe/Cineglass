@@ -14,7 +14,7 @@ export default async function WatchlistPage() {
       <h1 className="text-3xl font-bold">Your Library</h1>
       {watchlist.length || favourites.length ? (
         <>
-          <MediaRow title="Watchlist" items={watchlist} />
+          <MediaRow title="Watchlist" items={watchlist} viewAllHref="/browse/watchlist" />
           <MediaRow title="Favourites" items={favourites} />
         </>
       ) : (

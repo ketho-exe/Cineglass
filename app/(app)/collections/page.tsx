@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/require-user";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +25,10 @@ export default async function CollectionsPage() {
       {collections?.length ? (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {collections.map((collection) => (
-            <a key={collection.id} href={`/collection/${collection.id}`} className="glass rounded-3xl p-6 transition hover:bg-white/14">
+            <Link key={collection.id} href={`/collection/${collection.id}`} className="glass rounded-3xl p-6 transition hover:-translate-y-1 hover:bg-white/14">
               <h2 className="text-xl font-semibold">{collection.title}</h2>
               <p className="mt-3 text-sm text-slate-400">{collection.description ?? collection.visibility}</p>
-            </a>
+            </Link>
           ))}
         </div>
       ) : (
