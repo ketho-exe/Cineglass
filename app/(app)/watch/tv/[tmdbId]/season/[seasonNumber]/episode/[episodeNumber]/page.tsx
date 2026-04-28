@@ -1,7 +1,7 @@
 import { EmbedMasterPlayer } from "@/components/player/embedmaster-player";
 import { WatchPartyPanel } from "@/components/player/watch-party-panel";
 import { requireUser } from "@/lib/auth/require-user";
-import type { PlaybackProvider } from "@/lib/providers/playback.types";
+import { getPlaybackProvider } from "@/lib/providers/preferences";
 
 export default async function WatchTvPage({
   params,
@@ -15,10 +15,10 @@ export default async function WatchTvPage({
   const { supabase, user } = await requireUser();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("player_provider")
+    .select("home_preferences")
     .eq("id", user.id)
     .maybeSingle();
-  const provider = normaliseProvider(profile?.player_provider);
+  const provider = getPlaybackProvider(profile);
   return (
     <div className="space-y-5">
       <EmbedMasterPlayer
@@ -40,8 +40,4 @@ export default async function WatchTvPage({
       </section>
     </div>
   );
-}
-
-function normaliseProvider(value: unknown): PlaybackProvider {
-  return value === "vidking" ? "vidking" : "embedmaster";
 }

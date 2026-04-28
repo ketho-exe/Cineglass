@@ -1,8 +1,8 @@
 import { EmbedMasterPlayer } from "@/components/player/embedmaster-player";
 import { WatchPartyPanel } from "@/components/player/watch-party-panel";
 import { requireUser } from "@/lib/auth/require-user";
+import { getPlaybackProvider } from "@/lib/providers/preferences";
 import { getDetails } from "@/lib/tmdb/client";
-import type { PlaybackProvider } from "@/lib/providers/playback.types";
 
 export default async function WatchMoviePage({
   params,
@@ -15,10 +15,10 @@ export default async function WatchMoviePage({
   const { party } = await searchParams;
   const { supabase, user } = await requireUser();
   const [{ data: profile }, media] = await Promise.all([
-    supabase.from("profiles").select("player_provider").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("home_preferences").eq("id", user.id).maybeSingle(),
     getDetails("movie", Number(tmdbId)).catch(() => null),
   ]);
-  const provider = normaliseProvider(profile?.player_provider);
+  const provider = getPlaybackProvider(profile);
   return (
     <div className="space-y-5">
       <EmbedMasterPlayer mediaType="movie" tmdbId={Number(tmdbId)} title={media?.title ?? `Movie ${tmdbId}`} autoplay partyCode={provider === "embedmaster" ? party : undefined} provider={provider} />
@@ -29,8 +29,4 @@ export default async function WatchMoviePage({
       </section>
     </div>
   );
-}
-
-function normaliseProvider(value: unknown): PlaybackProvider {
-  return value === "vidking" ? "vidking" : "embedmaster";
 }

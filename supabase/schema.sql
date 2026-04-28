@@ -14,7 +14,8 @@ create table if not exists public.profiles (
     "recommended": true,
     "trendingMovies": true,
     "trendingTv": true,
-    "anime": true
+    "anime": true,
+    "playerProvider": "embedmaster"
   }'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -27,7 +28,8 @@ alter table public.profiles
     "recommended": true,
     "trendingMovies": true,
     "trendingTv": true,
-    "anime": true
+    "anime": true,
+    "playerProvider": "embedmaster"
   }'::jsonb;
 
 alter table public.profiles
