@@ -1,13 +1,13 @@
-import { Clapperboard, Home, Library, Search, Settings, Shield } from "lucide-react";
+import { Clapperboard } from "lucide-react";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { NavLink } from "@/components/layout/nav-link";
 
 const baseLinks = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/search", label: "Search", icon: Search },
-  { href: "/watchlist", label: "Library", icon: Library },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/home", label: "Home", icon: "home" as const },
+  { href: "/search", label: "Search", icon: "search" as const },
+  { href: "/watchlist", label: "Library", icon: "library" as const },
+  { href: "/settings", label: "Settings", icon: "settings" as const },
 ];
 
 export async function TopNav() {
@@ -19,7 +19,7 @@ export async function TopNav() {
     ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
     : { data: null };
   const links = ["owner", "admin"].includes(profile?.role ?? "")
-    ? [...baseLinks, { href: "/admin", label: "Admin", icon: Shield }]
+    ? [...baseLinks, { href: "/admin", label: "Admin", icon: "shield" as const }]
     : baseLinks;
 
   return (

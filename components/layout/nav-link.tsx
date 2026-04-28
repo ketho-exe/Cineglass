@@ -1,23 +1,34 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { Home, Library, Search, Settings, Shield } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ComponentType } from "react";
+
+const icons = {
+  home: Home,
+  library: Library,
+  search: Search,
+  settings: Settings,
+  shield: Shield,
+};
+
+export type NavIcon = keyof typeof icons;
 
 export function NavLink({
   href,
   label,
-  icon: Icon,
+  icon,
   compact = false,
 }: {
   href: string;
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: NavIcon;
   compact?: boolean;
 }) {
   const pathname = usePathname();
   const active = pathname === href || pathname.startsWith(`${href}/`);
+  const Icon = icons[icon];
 
   return (
     <Link
