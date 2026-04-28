@@ -57,6 +57,20 @@ export async function getTrending(mediaType: MediaType) {
   return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType })));
 }
 
+export async function getPopular(mediaType: MediaType, page = 1) {
+  const data = await tmdbFetch<{ results: Record<string, unknown>[] }>(`/${mediaType}/popular`, { page });
+  return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType })));
+}
+
+export async function discoverByGenre(mediaType: MediaType, genreId: number, page = 1) {
+  const data = await tmdbFetch<{ results: Record<string, unknown>[] }>(`/discover/${mediaType}`, {
+    with_genres: genreId,
+    sort_by: "popularity.desc",
+    page,
+  });
+  return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType })));
+}
+
 export async function discoverAnime() {
   const data = await tmdbFetch<{ results: Record<string, unknown>[] }>("/discover/tv", {
     with_genres: "16",

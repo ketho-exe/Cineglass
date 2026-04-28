@@ -5,6 +5,7 @@ import { getDetails, getSeason, getTmdbImageUrl } from "@/lib/tmdb/client";
 import { yearFromDate } from "@/lib/utils";
 import { Heart, Play, Plus } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,15 @@ export default async function TvDetailPage({
         <div className="relative flex min-h-[500px] max-w-3xl flex-col justify-end p-6 sm:p-10">
           <p className="text-sm uppercase tracking-[0.22em] text-violet-200">Series - {yearFromDate(media.firstAirDate)}</p>
           <h1 className="mt-3 text-4xl font-black sm:text-6xl">{media.title}</h1>
+          {media.genres?.length ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {media.genres.map((genre) => (
+                <Link key={genre.id} href={`/genre/tv/${genre.id}`} className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm text-slate-100 backdrop-blur transition hover:border-emerald-200/50 hover:bg-emerald-200/10">
+                  {genre.name}
+                </Link>
+              ))}
+            </div>
+          ) : null}
           <p className="mt-4 text-slate-200">{media.overview}</p>
           <div className="mt-7 flex flex-wrap gap-3">
             <LinkButton href={`/watch/tv/${media.tmdbId}/season/${selectedSeason}/episode/${episodes[0]?.episodeNumber ?? 1}`}><Play className="h-4 w-4 fill-current" />Start Season {selectedSeason}</LinkButton>

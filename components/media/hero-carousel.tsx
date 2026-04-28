@@ -18,6 +18,15 @@ export function HeroCarousel({ items }: { items: NormalisedMedia[] }) {
       <div className="relative mx-auto flex min-h-[calc(100vh-5rem)] max-w-7xl flex-col justify-end px-4 pb-20 pt-24 sm:px-6 lg:pb-24">
         <p className="mb-3 text-sm font-medium uppercase tracking-[0.22em] text-emerald-200">Featured tonight</p>
         <h1 className="text-4xl font-black tracking-tight sm:text-6xl">{item.title}</h1>
+        {item.genres?.length ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {item.genres.slice(0, 3).map((genre) => (
+              <LinkButton key={genre.id} href={`/genre/${item.mediaType}/${genre.id}`} variant="glass" className="px-3 py-1.5 text-xs">
+                {genre.name}
+              </LinkButton>
+            ))}
+          </div>
+        ) : null}
         <p className="mt-4 line-clamp-3 max-w-xl text-base text-slate-200 sm:text-lg">{item.overview}</p>
         <div className="mt-7 flex flex-wrap gap-3">
           <LinkButton href={item.mediaType === "tv" ? `/watch/tv/${item.tmdbId}/season/1/episode/1` : `/watch/movie/${item.tmdbId}`}><Play className="h-4 w-4 fill-current" />Watch</LinkButton>

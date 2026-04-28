@@ -1,3 +1,4 @@
+import { normaliseGenreIds } from "./genres";
 import type { NormalisedMedia } from "@/types/media";
 
 type TmdbMedia = Record<string, unknown>;
@@ -30,7 +31,7 @@ export function normaliseMedia(item: TmdbMedia): NormalisedMedia | null {
       typeof item.vote_average === "number" ? item.vote_average : undefined,
     genres: Array.isArray(item.genres)
       ? item.genres.filter(isGenre)
-      : undefined,
+      : normaliseGenreIds(mediaType, item.genre_ids),
     runtime: typeof item.runtime === "number" ? item.runtime : undefined,
     seasons: Array.isArray(item.seasons)
       ? item.seasons

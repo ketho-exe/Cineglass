@@ -5,6 +5,7 @@ import { getDetails, getTmdbImageUrl } from "@/lib/tmdb/client";
 import { formatRuntime, yearFromDate } from "@/lib/utils";
 import { Heart, Play, Plus } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,15 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ tm
           <div className="flex max-w-3xl flex-col justify-end">
             <p className="text-sm uppercase tracking-[0.22em] text-violet-200">Movie • {yearFromDate(media.releaseDate)}</p>
             <h1 className="mt-3 text-4xl font-black sm:text-6xl">{media.title}</h1>
+            {media.genres?.length ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {media.genres.map((genre) => (
+                  <Link key={genre.id} href={`/genre/movie/${genre.id}`} className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm text-slate-100 backdrop-blur transition hover:border-emerald-200/50 hover:bg-emerald-200/10">
+                    {genre.name}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
             <p className="mt-4 text-slate-200">{media.overview}</p>
             <p className="mt-4 text-sm text-slate-300">{formatRuntime(media.runtime)} {media.voteAverage ? `TMDB ${media.voteAverage.toFixed(1)}` : ""}</p>
             <div className="mt-7 flex flex-wrap gap-3">

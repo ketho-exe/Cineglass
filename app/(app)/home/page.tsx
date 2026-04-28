@@ -1,3 +1,4 @@
+import { CategoryRail } from "@/components/media/category-rail";
 import { HeroCarousel } from "@/components/media/hero-carousel";
 import { MediaRow } from "@/components/media/media-row";
 import { requireUser } from "@/lib/auth/require-user";
@@ -36,12 +37,13 @@ export default async function HomePage() {
   return (
     <>
       <HeroCarousel items={recommended.length ? recommended : movies} />
-      <MediaRow title="Continue Watching" items={continueWatching} />
-      <MediaRow title="Recommended for You" items={recommended} />
-      <MediaRow title="Watchlist" items={watchlist} />
-      <MediaRow title="Trending Movies" items={movies} />
-      <MediaRow title="Trending TV" items={tv} />
-      <MediaRow title="Anime Picks" items={anime} />
+      <CategoryRail mediaType="movie" />
+      <MediaRow title="Continue Watching" items={continueWatching} viewAllHref="/browse/continue-watching" />
+      <MediaRow title="Recommended for You" items={recommended} viewAllHref="/browse/recommended" />
+      <MediaRow title="Watchlist" items={watchlist} viewAllHref="/browse/watchlist" />
+      <MediaRow title="Trending Movies" items={movies} viewAllHref="/browse/trending-movies" />
+      <MediaRow title="Trending TV" items={tv} viewAllHref="/browse/trending-tv" />
+      <MediaRow title="Anime Picks" items={anime} viewAllHref="/browse/anime" />
     </>
   );
 }
