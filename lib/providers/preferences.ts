@@ -20,9 +20,9 @@ export function normalisePlaybackProvider(value: unknown): PlaybackProvider {
 
 export function getPlaybackProvider(profile: ProfilePlaybackPreference | null | undefined): PlaybackProvider {
   const homePreferences = profile?.home_preferences;
-  const fallback = typeof homePreferences === "object" && homePreferences !== null
+  const preferred = typeof homePreferences === "object" && homePreferences !== null
     ? (homePreferences as { playerProvider?: unknown }).playerProvider
     : undefined;
 
-  return normalisePlaybackProvider(profile?.player_provider ?? fallback);
+  return normalisePlaybackProvider(preferred ?? profile?.player_provider);
 }

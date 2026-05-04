@@ -37,6 +37,7 @@ export function ProviderPlayer(props: ProviderPlayerProps) {
   const [embedUrl, setEmbedUrl] = useState<string>();
   const [error, setError] = useState<string>();
   const [retryKey, setRetryKey] = useState(0);
+  const [preferenceState, setPreferenceState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastSavedAt = useRef(0);
   const lastPartyCommandAt = useRef<string | undefined>(undefined);
@@ -45,6 +46,26 @@ export function ProviderPlayer(props: ProviderPlayerProps) {
   useEffect(() => {
     setProvider(props.provider ?? "embedmaster");
   }, [props.provider]);
+
+  async function chooseProvider(nextProvider: PlaybackProvider) {
+    setProvider(nextProvider);
+    setPreferenceState("saving");
+    try {
+      const response = await fetch("/api/playback-preference", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: nextProvider }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(data?.error ?? "Could not save provider preference");
+      }
+      setPreferenceState("saved");
+      window.setTimeout(() => setPreferenceState("idle"), 1800);
+    } catch {
+      setPreferenceState("error");
+    }
+  }
 
   useEffect(() => {
     const params = new URLSearchParams({
@@ -176,7 +197,7 @@ export function ProviderPlayer(props: ProviderPlayerProps) {
         <div className="flex flex-wrap justify-center gap-2">
           <button type="button" onClick={() => setRetryKey((value) => value + 1)} className="rounded-full border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">Retry</button>
           {playbackProviders.filter((candidate) => candidate !== provider).map((candidate) => (
-            <button key={candidate} type="button" onClick={() => setProvider(candidate)} className="rounded-full border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">
+            <button key={candidate} type="button" onClick={() => void chooseProvider(candidate)} className="rounded-full border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">
               Switch to {providerLabels[candidate]}
             </button>
           ))}
@@ -186,19 +207,42 @@ export function ProviderPlayer(props: ProviderPlayerProps) {
   }
 
   return (
-    <div className="aspect-video overflow-hidden rounded-2xl bg-black">
-      {embedUrl ? (
-        <iframe
-          ref={iframeRef}
-          src={embedUrl}
-          title={props.title}
-          allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *"
-          allowFullScreen
-          className="h-full w-full border-0 bg-black"
-        />
-      ) : (
-        <div className="flex h-full items-center justify-center text-slate-300">Loading player...</div>
-      )}
+    <div className="overflow-hidden rounded-2xl bg-black">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-cine-panel/95 px-4 py-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-cyan-200">Playback provider</p>
+          <p className="text-sm text-slate-300">{providerLabels[provider]}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <select
+            value={provider}
+            onChange={(event) => void chooseProvider(event.target.value as PlaybackProvider)}
+            className="rounded-full border border-white/10 bg-black px-4 py-2 text-sm text-white outline-none transition hover:border-cine-accent/50 focus:border-cine-accent"
+            aria-label="Playback provider"
+          >
+            {playbackProviders.map((candidate) => (
+              <option key={candidate} value={candidate}>{providerLabels[candidate]}</option>
+            ))}
+          </select>
+          {preferenceState === "saving" ? <span className="text-xs text-slate-400">Saving...</span> : null}
+          {preferenceState === "saved" ? <span className="text-xs text-cyan-200">Saved</span> : null}
+          {preferenceState === "error" ? <span className="text-xs text-rose-200">Not saved</span> : null}
+        </div>
+      </div>
+      <div className="aspect-video bg-black">
+        {embedUrl ? (
+          <iframe
+            ref={iframeRef}
+            src={embedUrl}
+            title={props.title}
+            allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *"
+            allowFullScreen
+            className="h-full w-full border-0 bg-black"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-slate-300">Loading player...</div>
+        )}
+      </div>
     </div>
   );
 }

@@ -10,7 +10,14 @@ describe("playback preferences", () => {
     expect(getPlaybackProvider({
       player_provider: "embedmaster",
       home_preferences: { playerProvider: "vidking" },
-    })).toBe("embedmaster");
+    })).toBe("vidking");
+  });
+
+  it("reads new providers from home preferences even when the legacy column has an old value", () => {
+    expect(getPlaybackProvider({
+      player_provider: "embedmaster",
+      home_preferences: { playerProvider: "videasy" },
+    })).toBe("videasy");
   });
 
   it("defaults to embedmaster", () => {
