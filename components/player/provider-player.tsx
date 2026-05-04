@@ -2,11 +2,13 @@
 
 import type { MediaType, PlayerProgress } from "@/types/media";
 import type { PlaybackProvider } from "@/lib/providers/playback.types";
+import { parseProviderProgressMessage } from "@/components/player/player-events";
+import { playbackProviders, providerLabels } from "@/lib/providers/preferences";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-type EmbedMasterPlayerProps = {
+type ProviderPlayerProps = {
   mediaType: MediaType;
   tmdbId: number;
   seasonNumber?: number;
@@ -14,24 +16,14 @@ type EmbedMasterPlayerProps = {
   title: string;
   startTimeSeconds?: number;
   autoplay?: boolean;
+  accentColor?: string;
+  nextEpisode?: boolean;
+  episodeSelector?: boolean;
+  autoplayNextEpisode?: boolean;
+  overlay?: boolean;
   onProgress?: (progress: PlayerProgress) => void;
   partyCode?: string;
   provider?: PlaybackProvider;
-};
-
-type EmbedMasterEvent = {
-  source?: "embedmaster_player";
-  event?: string;
-  info?: {
-    currentTime?: number;
-    current_time?: number;
-    duration?: number;
-    seconds?: number;
-    time?: number;
-    position?: number;
-    percent?: number;
-    progress?: number;
-  };
 };
 
 type PartyCommand = {
@@ -40,14 +32,19 @@ type PartyCommand = {
   issuedAt: string;
 };
 
-export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
-  const provider = props.provider ?? "embedmaster";
+export function ProviderPlayer(props: ProviderPlayerProps) {
+  const [provider, setProvider] = useState<PlaybackProvider>(props.provider ?? "embedmaster");
   const [embedUrl, setEmbedUrl] = useState<string>();
   const [error, setError] = useState<string>();
+  const [retryKey, setRetryKey] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const lastSavedAt = useRef(0);
   const lastPartyCommandAt = useRef<string | undefined>(undefined);
   const currentPositionRef = useRef(0);
+
+  useEffect(() => {
+    setProvider(props.provider ?? "embedmaster");
+  }, [props.provider]);
 
   useEffect(() => {
     const params = new URLSearchParams({
@@ -57,18 +54,28 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
     });
     if (props.seasonNumber) params.set("seasonNumber", String(props.seasonNumber));
     if (props.episodeNumber) params.set("episodeNumber", String(props.episodeNumber));
+    if (props.startTimeSeconds) params.set("progress", String(props.startTimeSeconds));
+    if (props.accentColor) params.set(provider === "spenembed" ? "theme" : "color", props.accentColor);
+    if (props.nextEpisode !== undefined) params.set("nextEpisode", String(props.nextEpisode));
+    if (props.episodeSelector !== undefined) params.set("episodeSelector", String(props.episodeSelector));
+    if (props.autoplayNextEpisode !== undefined) params.set("autoplayNextEpisode", String(props.autoplayNextEpisode));
+    if (props.overlay !== undefined) params.set("overlay", String(props.overlay));
 
+    setError(undefined);
+    setEmbedUrl(undefined);
     fetch(`/api/playback/${provider}?${params.toString()}`)
       .then((response) => {
-        if (!response.ok) throw new Error("Unable to create player URL");
-        return response.json() as Promise<{ embedUrl: string }>;
+        return response.json().then((data) => {
+          if (!response.ok) throw new Error(data?.error ?? "Unable to create player URL");
+          return data as { embedUrl: string };
+        });
       })
       .then((data) => {
         setEmbedUrl(data.embedUrl);
         setError(undefined);
       })
       .catch((reason: Error) => setError(reason.message));
-  }, [provider, props.mediaType, props.tmdbId, props.seasonNumber, props.episodeNumber, props.autoplay]);
+  }, [provider, retryKey, props.mediaType, props.tmdbId, props.seasonNumber, props.episodeNumber, props.autoplay, props.startTimeSeconds, props.accentColor, props.nextEpisode, props.episodeSelector, props.autoplayNextEpisode, props.overlay]);
 
   useEffect(() => {
     if (!embedUrl) return;
@@ -92,36 +99,24 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
 
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
-      const message = parsePlayerMessage(event.data);
+      const message = parseProviderProgressMessage(event.data);
       if (!message) return;
-      const eventName = getEventName(message);
-      if (!eventName) return;
-
-      const info = getEventInfo(message);
-      const currentTime = readTime(info);
-      const duration = Number(info?.duration ?? 0);
-      if (!currentTime && !["play", "pause", "ended"].includes(eventName)) return;
+      const currentTime = message.progressSeconds;
       currentPositionRef.current = currentTime;
 
-      const rawProgressPercent = Number(
-        info?.percent ?? info?.progress ?? (duration ? (currentTime / duration) * 100 : 0),
-      );
-      const progressPercent = rawProgressPercent > 0 && rawProgressPercent <= 1
-        ? rawProgressPercent * 100
-        : rawProgressPercent;
       const progress = {
         tmdbId: props.tmdbId,
         mediaType: props.mediaType,
-        seasonNumber: props.seasonNumber,
-        episodeNumber: props.episodeNumber,
+        seasonNumber: message.seasonNumber ?? props.seasonNumber,
+        episodeNumber: message.episodeNumber ?? props.episodeNumber,
         progressSeconds: Math.floor(currentTime),
-        durationSeconds: duration ? Math.floor(duration) : undefined,
-        progressPercent,
-        completed: eventName === "ended" || progressPercent >= 90,
+        durationSeconds: message.durationSeconds,
+        progressPercent: message.progressPercent,
+        completed: message.event === "ended" || message.progressPercent >= 90,
       };
       props.onProgress?.(progress);
-      if (provider === "embedmaster" && props.partyCode && ["play", "pause", "seeked"].includes(eventName)) {
-        void publishPartyCommand(props.partyCode, eventName === "seeked" ? "seek" : eventName, Math.floor(currentTime));
+      if (provider === "embedmaster" && props.partyCode && ["play", "pause", "seeked"].includes(message.event)) {
+        void publishPartyCommand(props.partyCode, message.event === "seeked" ? "seek" : message.event, Math.floor(currentTime));
       }
 
       const now = Date.now();
@@ -173,8 +168,19 @@ export function EmbedMasterPlayer(props: EmbedMasterPlayerProps) {
 
   if (error) {
     return (
-      <div className="flex aspect-video items-center justify-center rounded-3xl border border-rose-300/20 bg-rose-950/30 text-rose-100">
-        <AlertCircle className="mr-2 h-5 w-5" /> {error}
+      <div className="flex aspect-video flex-col items-center justify-center gap-4 rounded-3xl border border-rose-300/20 bg-rose-950/30 p-6 text-center text-rose-100">
+        <div className="flex items-center text-lg font-semibold">
+          <AlertCircle className="mr-2 h-5 w-5" /> Could not load {providerLabels[provider]}.
+        </div>
+        <p className="max-w-xl text-sm text-rose-100/80">{error}</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <button type="button" onClick={() => setRetryKey((value) => value + 1)} className="rounded-full border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">Retry</button>
+          {playbackProviders.filter((candidate) => candidate !== provider).map((candidate) => (
+            <button key={candidate} type="button" onClick={() => setProvider(candidate)} className="rounded-full border border-white/15 px-4 py-2 text-sm text-white hover:bg-white/10">
+              Switch to {providerLabels[candidate]}
+            </button>
+          ))}
+        </div>
       </div>
     );
   }
@@ -202,40 +208,6 @@ function postPlayerCommand(target: HTMLIFrameElement | null, provider: PlaybackP
     ? { source: "embedmaster_player_command", command, value }
     : JSON.stringify({ type: "PLAYER_COMMAND", data: { command, value } });
   target?.contentWindow?.postMessage(message, "*");
-}
-
-function parsePlayerMessage(data: unknown): (EmbedMasterEvent & { type?: string; data?: EmbedMasterEvent["info"] & { event?: string } }) | null {
-  if (typeof data === "string") {
-    try {
-      return JSON.parse(data) as EmbedMasterEvent;
-    } catch {
-      return null;
-    }
-  }
-  return data && typeof data === "object" ? data as EmbedMasterEvent : null;
-}
-
-function getEventName(message: ReturnType<typeof parsePlayerMessage>) {
-  if (message?.source === "embedmaster_player") return message.event;
-  if (message?.type === "PLAYER_EVENT") return message.data?.event;
-  return undefined;
-}
-
-function getEventInfo(message: ReturnType<typeof parsePlayerMessage>) {
-  if (message?.source === "embedmaster_player") return message.info;
-  if (message?.type === "PLAYER_EVENT") return message.data;
-  return undefined;
-}
-
-function readTime(info: EmbedMasterEvent["info"]) {
-  return Number(
-    info?.currentTime ??
-    info?.current_time ??
-    info?.seconds ??
-    info?.time ??
-    info?.position ??
-    0,
-  );
 }
 
 async function saveProgress(progress: PlayerProgress) {

@@ -26,17 +26,17 @@ export function MediaRow({ title, items, viewAllHref }: { title: string; items: 
         <div>
           <h2 className="text-xl font-semibold">{title}</h2>
           {viewAllHref ? (
-            <Link href={viewAllHref} className="mt-1 inline-flex items-center gap-1 text-sm text-emerald-200 transition hover:text-white">
+            <Link href={viewAllHref} className="mt-1 inline-flex items-center gap-1 text-sm text-cyan-200 transition hover:text-white">
               <LayoutGrid className="h-4 w-4" />
               View all
             </Link>
           ) : null}
         </div>
         <div className="flex gap-2">
-          <button type="button" aria-label={`Scroll ${title} left`} onClick={() => scrollBy(-1)} className="rounded-full border border-white/10 bg-white/5 p-2 transition hover:bg-white/10">
+          <button type="button" aria-label={`Scroll ${title} left`} onClick={() => scrollBy(-1)} className="rounded-full border border-white/10 bg-white/5 p-2 transition hover:border-cine-accent/40 hover:bg-white/10">
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <button type="button" aria-label={`Scroll ${title} right`} onClick={() => scrollBy(1)} className="rounded-full border border-white/10 bg-white/5 p-2 transition hover:bg-white/10">
+          <button type="button" aria-label={`Scroll ${title} right`} onClick={() => scrollBy(1)} className="rounded-full border border-white/10 bg-white/5 p-2 transition hover:border-cine-accent/40 hover:bg-white/10">
             <ChevronRight className="h-5 w-5" />
           </button>
         </div>

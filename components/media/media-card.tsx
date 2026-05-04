@@ -41,14 +41,14 @@ export function MediaCard({
         </div>
       </Link>
       <div className="mt-3">
-        <Link href={cardHref} prefetch className="line-clamp-1 text-sm font-semibold transition hover:text-emerald-100">{media.title}</Link>
+        <Link href={cardHref} prefetch className="line-clamp-1 text-sm font-semibold transition hover:text-cyan-100">{media.title}</Link>
         <p className="text-xs text-slate-400">
           {yearFromDate(media.releaseDate ?? media.firstAirDate)} {media.mediaType === "tv" ? "Series" : "Movie"}
         </p>
         {genres.length ? (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {genres.map((genre) => (
-              <Link key={genre.id} href={`/genre/${media.mediaType}/${genre.id}`} className="rounded-full border border-white/10 bg-white/7 px-2 py-1 text-[11px] text-slate-200 backdrop-blur transition hover:border-emerald-200/50 hover:bg-emerald-200/10">
+              <Link key={genre.id} href={`/genre/${media.mediaType}/${genre.id}`} className="rounded-full border border-white/10 bg-white/[0.07] px-2 py-1 text-[11px] text-slate-200 backdrop-blur transition hover:border-cine-accent/50 hover:bg-cine-accent/10">
                 {genre.name}
               </Link>
             ))}

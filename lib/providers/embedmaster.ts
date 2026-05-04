@@ -3,7 +3,7 @@ import type { PlaybackRequest } from "@/lib/providers/playback.types";
 const defaultPlayerId = "k8i9pm5nsn3nrj0d";
 
 export function buildEmbedMasterEmbedUrl(request: PlaybackRequest): string {
-  if (!Number.isInteger(request.tmdbId) || request.tmdbId <= 0) {
+  if (!Number.isInteger(request.tmdbId) || !request.tmdbId || request.tmdbId <= 0) {
     throw new Error("A valid tmdbId is required");
   }
 

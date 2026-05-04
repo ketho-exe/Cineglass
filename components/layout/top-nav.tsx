@@ -23,10 +23,10 @@ export async function TopNav() {
     : baseLinks;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-cine-bg/72 backdrop-blur-2xl">
+    <header className="glass-nav sticky top-0 z-40">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/home" prefetch className="flex items-center gap-2 text-lg font-semibold">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-cine-bg">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-cine-accent text-cine-bg shadow-[0_12px_32px_rgba(34,211,238,0.25)]">
             <Clapperboard className="h-5 w-5" />
           </span>
           CineGlass

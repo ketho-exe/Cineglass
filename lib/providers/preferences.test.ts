@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPlaybackProvider } from "./preferences";
+import { getPlaybackProvider, normalisePlaybackProvider, providerLabels } from "./preferences";
 
 describe("playback preferences", () => {
   it("reads provider from home preferences", () => {
@@ -15,5 +15,21 @@ describe("playback preferences", () => {
 
   it("defaults to embedmaster", () => {
     expect(getPlaybackProvider({ home_preferences: {} })).toBe("embedmaster");
+  });
+
+  it("accepts all supported providers", () => {
+    expect(normalisePlaybackProvider("embedmaster")).toBe("embedmaster");
+    expect(normalisePlaybackProvider("vidking")).toBe("vidking");
+    expect(normalisePlaybackProvider("videasy")).toBe("videasy");
+    expect(normalisePlaybackProvider("spenembed")).toBe("spenembed");
+  });
+
+  it("provides display labels for every provider", () => {
+    expect(providerLabels).toEqual({
+      embedmaster: "EmbedMaster",
+      vidking: "VidKing",
+      videasy: "Videasy",
+      spenembed: "SpenEmbed",
+    });
   });
 });

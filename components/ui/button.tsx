@@ -3,8 +3,8 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const variants = {
-  primary: "bg-white text-cine-bg hover:bg-emerald-100",
-  glass: "glass text-white hover:bg-white/14",
+  primary: "bg-cine-accent text-cine-bg shadow-[0_12px_36px_rgba(34,211,238,0.24)] hover:bg-cyan-200",
+  glass: "glass text-white hover:border-cine-accent/40 hover:bg-white/[0.14]",
   danger: "bg-rose-400/18 text-rose-100 hover:bg-rose-400/28",
 };
 
@@ -24,7 +24,6 @@ export function Button({ className, variant = "primary", ...props }: ButtonProps
     />
   );
 }
-
 type LinkButtonProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
   href: string;
   variant?: keyof typeof variants;

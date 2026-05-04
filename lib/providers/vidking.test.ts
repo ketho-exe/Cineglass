@@ -24,6 +24,6 @@ describe("buildVidKingEmbedUrl", () => {
         nextEpisode: true,
         episodeSelector: true,
       }),
-    ).toBe("https://www.vidking.net/embed/tv/119051/1/8?nextEpisode=true&episodeSelector=true");
+    ).toBe("https://www.vidking.net/embed/tv/119051/1/8?color=22d3ee&nextEpisode=true&episodeSelector=true");
   });
 });

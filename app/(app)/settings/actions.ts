@@ -9,9 +9,19 @@ const keys = ["continueWatching", "watchlist", "recommended", "trendingMovies", 
 export async function updateHomePreferences(formData: FormData) {
   const { supabase, user } = await requireUser();
   const playerProvider = normalisePlaybackProvider(formData.get("playerProvider"));
+  const playerAccentColor = stringValue(formData.get("playerAccentColor")) ?? "22d3ee";
   const homePreferences = {
     ...Object.fromEntries(keys.map((key) => [key, formData.get(key) === "on"])),
     playerProvider,
+    playerAccentColor,
+    autoplay: formData.get("autoplay") === "on",
+    resumePlayback: formData.get("resumePlayback") === "on",
+    videasy: {
+      overlay: formData.get("videasyOverlay") === "on",
+      episodeSelector: formData.get("videasyEpisodeSelector") === "on",
+      nextEpisode: formData.get("videasyNextEpisode") === "on",
+      autoplayNextEpisode: formData.get("videasyAutoplayNextEpisode") === "on",
+    },
   };
 
   const homePreferencesUpdate = await supabase
@@ -31,4 +41,8 @@ export async function updateHomePreferences(formData: FormData) {
   revalidatePath("/home");
   revalidatePath("/settings");
   revalidatePath("/watch", "layout");
+}
+
+function stringValue(value: FormDataEntryValue | null) {
+  return typeof value === "string" && value.trim() ? value.trim().replace(/^#/, "") : undefined;
 }
