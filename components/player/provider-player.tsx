@@ -5,7 +5,7 @@ import type { PlaybackProvider } from "@/lib/providers/playback.types";
 import { parseProviderProgressMessage } from "@/components/player/player-events";
 import { playbackProviders, providerLabels } from "@/lib/providers/preferences";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 type ProviderPlayerProps = {
@@ -207,7 +207,7 @@ export function ProviderPlayer(props: ProviderPlayerProps) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-black">
+    <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-glow">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-cine-panel/95 px-4 py-3">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-cyan-200">Playback provider</p>
@@ -225,7 +225,7 @@ export function ProviderPlayer(props: ProviderPlayerProps) {
             ))}
           </select>
           {preferenceState === "saving" ? <span className="text-xs text-slate-400">Saving...</span> : null}
-          {preferenceState === "saved" ? <span className="text-xs text-cyan-200">Saved</span> : null}
+          {preferenceState === "saved" ? <span className="rounded-full bg-cyan-200/10 px-2 py-1 text-xs text-cyan-200">Saved</span> : null}
           {preferenceState === "error" ? <span className="text-xs text-rose-200">Not saved</span> : null}
         </div>
       </div>
@@ -240,7 +240,15 @@ export function ProviderPlayer(props: ProviderPlayerProps) {
             className="h-full w-full border-0 bg-black"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-slate-300">Loading player...</div>
+          <div className="flex h-full flex-col items-center justify-center gap-4 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.12),transparent_22rem)] p-6 text-center text-slate-300">
+            <div className="relative h-20 w-20 rounded-full border border-white/10 bg-white/[0.05]">
+              <Loader2 className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 animate-spin text-cyan-200 motion-reduce:animate-none" />
+            </div>
+            <div>
+              <p className="font-semibold text-white">Preparing your player...</p>
+              <p className="mt-1 text-sm text-slate-400">Trying your preferred provider</p>
+            </div>
+          </div>
         )}
       </div>
     </div>

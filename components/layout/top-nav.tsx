@@ -2,13 +2,7 @@ import { Clapperboard } from "lucide-react";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { NavLink } from "@/components/layout/nav-link";
-
-const baseLinks = [
-  { href: "/home", label: "Home", icon: "home" as const },
-  { href: "/search", label: "Search", icon: "search" as const },
-  { href: "/watchlist", label: "Library", icon: "library" as const },
-  { href: "/settings", label: "Settings", icon: "settings" as const },
-];
+import { getNavigationItems } from "@/lib/navigation";
 
 export async function TopNav() {
   const supabase = await createSupabaseServerClient();
@@ -18,9 +12,8 @@ export async function TopNav() {
   const { data: profile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
     : { data: null };
-  const links = ["owner", "admin"].includes(profile?.role ?? "")
-    ? [...baseLinks, { href: "/admin", label: "Admin", icon: "shield" as const }]
-    : baseLinks;
+  const navigation = getNavigationItems(profile?.role);
+  const links = [...navigation.primary, ...navigation.admin.slice(0, 1)];
 
   return (
     <header className="glass-nav sticky top-0 z-40">
@@ -34,7 +27,7 @@ export async function TopNav() {
         <div className="hidden items-center gap-1 md:flex">
           {links.map((link) => <NavLink key={link.href} {...link} />)}
           <form action="/auth/logout" method="post">
-            <button className="rounded-full px-4 py-2 text-sm text-slate-300 transition hover:bg-white/10 hover:text-white">
+            <button className="rounded-full px-4 py-2 text-sm text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-200">
               Sign out
             </button>
           </form>

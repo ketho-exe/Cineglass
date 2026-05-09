@@ -10,7 +10,6 @@ export function MediaExtras({ media }: { media: NormalisedMedia }) {
     ["Release", yearFromDate(media.releaseDate ?? media.firstAirDate)],
     ["Runtime", media.runtime ? formatRuntime(media.runtime) : media.mediaType === "tv" ? `${media.seasons?.length ?? 0} seasons` : "Unknown"],
     ["TMDB score", media.voteAverage ? `${media.voteAverage.toFixed(1)} / 10` : "Not rated yet"],
-    ["Awards", "Awards feed not connected yet"],
   ];
 
   return (
