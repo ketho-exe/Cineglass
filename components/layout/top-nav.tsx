@@ -15,7 +15,7 @@ export async function TopNav() {
     : { data: null };
 
   return (
-    <header className="sticky top-0 z-40 -mb-20 bg-gradient-to-b from-black via-black/82 to-transparent backdrop-blur-xl">
+    <header className="sticky top-0 z-40 -mb-20 bg-gradient-to-b from-black via-black/82 to-transparent">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 pb-8 pt-3 sm:px-6">
         <Link href="/home" prefetch className="flex items-center gap-2 text-lg font-semibold">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-cine-bg shadow-[0_12px_32px_rgba(255,255,255,0.16)]">

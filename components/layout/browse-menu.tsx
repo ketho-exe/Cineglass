@@ -22,7 +22,7 @@ export function BrowseMenu({ role }: { role?: string | null }) {
       </label>
       <div className="fixed inset-0 z-50 hidden peer-checked:block" role="dialog" aria-modal="true" aria-labelledby="browse-menu-title">
           <label htmlFor="browse-menu-toggle" aria-label="Close browse menu" className="absolute inset-0 cursor-pointer bg-black/65 backdrop-blur-md" />
-          <div className="glass absolute left-1/2 top-20 w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 rounded-[2rem] p-5 shadow-glow sm:p-6">
+          <div className="glass absolute left-1/2 top-20 w-[min(calc(100vw-2rem),42rem)] -translate-x-1/2 rounded-[2rem] p-5 shadow-glow sm:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Menu</p>
