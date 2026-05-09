@@ -74,12 +74,12 @@ export async function searchPersonFilmography(query: string) {
 }
 
 export async function getTrending(mediaType: MediaType) {
-  const data = await tmdbFetch<{ results: Record<string, unknown>[] }>(`/trending/${mediaType}/week`);
+  const data = await tmdbFetch<{ results: Record<string, unknown>[] }>(`/trending/${mediaType}/week`, { include_adult: false });
   return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType })));
 }
 
 export async function getPopular(mediaType: MediaType, page = 1) {
-  const data = await tmdbFetch<{ results: Record<string, unknown>[] }>(`/${mediaType}/popular`, { page });
+  const data = await tmdbFetch<{ results: Record<string, unknown>[] }>(`/${mediaType}/popular`, { page, include_adult: false });
   return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType })));
 }
 
@@ -88,6 +88,7 @@ export async function discoverByGenre(mediaType: MediaType, genreId: number, pag
     with_genres: genreId,
     sort_by: "popularity.desc",
     page,
+    include_adult: false,
   });
   return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: mediaType })));
 }
@@ -121,6 +122,8 @@ export async function discoverAnime() {
     with_genres: "16",
     with_keywords: "210024",
     sort_by: "popularity.desc",
+    include_adult: false,
+    "vote_count.gte": 25,
   });
   return normaliseSearchResults(data.results.map((item) => ({ ...item, media_type: "tv" })));
 }

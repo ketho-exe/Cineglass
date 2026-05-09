@@ -54,4 +54,20 @@ describe("TMDB normalisation", () => {
       ]),
     ).toHaveLength(1);
   });
+
+  it("filters adult or explicit catalogue entries", () => {
+    expect(
+      normaliseSearchResults([
+        { id: 1, media_type: "movie", title: "Adult Result", adult: true },
+        { id: 2, media_type: "tv", name: "Explicit Anime", overview: "An erotic late-night title." },
+        { id: 3, media_type: "tv", name: "Suggestive Series", overview: "The plot keeps mentioning marital intimacy and touching her body." },
+        { id: 4, media_type: "movie", title: "Family Feature" },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        tmdbId: 4,
+        title: "Family Feature",
+      }),
+    ]);
+  });
 });

@@ -4,6 +4,8 @@ import type { CreditPerson, NormalisedMedia, PersonDetails } from "@/types/media
 type TmdbMedia = Record<string, unknown>;
 
 export function normaliseMedia(item: TmdbMedia): NormalisedMedia | null {
+  if (isUnsafeCatalogItem(item)) return null;
+
   const mediaType = inferMediaType(item);
   if (!mediaType) return null;
 
@@ -45,6 +47,23 @@ export function normaliseMedia(item: TmdbMedia): NormalisedMedia | null {
 
 export function normaliseSearchResults(items: TmdbMedia[]) {
   return items.map(normaliseMedia).filter((item): item is NormalisedMedia => Boolean(item));
+}
+
+function isUnsafeCatalogItem(item: TmdbMedia) {
+  if (item.adult === true) return true;
+
+  const searchableText = [
+    stringValue(item.title),
+    stringValue(item.name),
+    stringValue(item.original_title),
+    stringValue(item.original_name),
+    stringValue(item.overview),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return /\b(hentai|erotic|perverted|porn|pornographic|softcore|sexploitation|sexually|impotent)\b|marital intimacy|touching [^.]{0,80}\bbody\b/.test(searchableText);
 }
 
 function inferMediaType(item: TmdbMedia) {
