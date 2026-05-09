@@ -5,7 +5,7 @@ import { getHeroItems } from "@/lib/media/hero";
 import { getTmdbImageUrl } from "@/lib/tmdb/client";
 import { formatRuntime, yearFromDate } from "@/lib/utils";
 import type { NormalisedMedia } from "@/types/media";
-import { ChevronLeft, ChevronRight, Info, Play } from "lucide-react";
+import { Info, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function HeroCarousel({ items }: { items: NormalisedMedia[] }) {
@@ -38,8 +38,6 @@ export function HeroCarousel({ items }: { items: NormalisedMedia[] }) {
   if (!item) return null;
   const backdrop = getTmdbImageUrl(item.backdropPath, "original");
   const nextItem = heroItems[(activeIndex + 1) % heroItems.length];
-  const previous = () => setActiveIndex((index) => (index - 1 + heroItems.length) % heroItems.length);
-  const next = () => setActiveIndex((index) => (index + 1) % heroItems.length);
   const metadata = [
     yearFromDate(item.releaseDate ?? item.firstAirDate),
     item.mediaType === "tv" ? "Series" : "Movie",
@@ -62,7 +60,7 @@ export function HeroCarousel({ items }: { items: NormalisedMedia[] }) {
       <div className="absolute inset-0 bg-gradient-to-r from-black via-cine-bg/78 to-cine-bg/12" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_26%,rgba(34,211,238,0.18),transparent_28rem),radial-gradient(circle_at_72%_18%,rgba(139,92,246,0.16),transparent_26rem)]" />
       <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-cine-bg via-cine-bg/76 to-transparent" />
-      <div className="relative mx-auto grid min-h-[560px] max-w-7xl items-end gap-8 px-4 pb-14 pt-20 sm:min-h-[620px] sm:px-6 lg:min-h-[calc(100vh-5rem)] lg:grid-cols-[1fr_260px] lg:pb-20">
+      <div className="relative mx-auto flex min-h-[560px] max-w-7xl items-end px-4 pb-14 pt-20 sm:min-h-[620px] sm:px-6 lg:min-h-[calc(100vh-5rem)] lg:pb-20">
         <div>
         <p className="mb-3 text-sm font-medium uppercase tracking-[0.22em] text-cyan-200">Popular movies</p>
         <h1 className="max-w-4xl text-4xl font-black uppercase tracking-normal sm:text-6xl lg:text-7xl">{item.title}</h1>
@@ -87,45 +85,10 @@ export function HeroCarousel({ items }: { items: NormalisedMedia[] }) {
         </div>
         {heroItems.length > 1 ? (
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <div className="flex gap-2">
-              <button type="button" aria-label="Previous featured title" onClick={previous} className="rounded-full border border-white/[0.12] bg-white/[0.08] p-2 text-white backdrop-blur transition hover:border-cine-accent/50 hover:bg-white/[0.14]">
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button type="button" aria-label="Next featured title" onClick={next} className="rounded-full border border-white/[0.12] bg-white/[0.08] p-2 text-white backdrop-blur transition hover:border-cine-accent/50 hover:bg-white/[0.14]">
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex gap-2">
-              {heroItems.map((heroItem, index) => (
-                <button
-                  key={`${heroItem.mediaType}-${heroItem.tmdbId}`}
-                  type="button"
-                  aria-label={`Show ${heroItem.title}`}
-                  onClick={() => setActiveIndex(index)}
-                  className={index === activeIndex ? "h-2 w-8 rounded-full bg-cine-accent" : "h-2 w-2 rounded-full bg-white/[0.38] transition hover:bg-white/70"}
-                />
-              ))}
-            </div>
             {nextItem ? <p className="text-sm text-slate-300">Next: {nextItem.title}</p> : null}
           </div>
         ) : null}
         </div>
-        {nextItem ? (
-          <div className="hidden rounded-3xl border border-white/10 bg-black/36 p-3 backdrop-blur-xl lg:block">
-            <p className="mb-3 px-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Next up</p>
-            <button type="button" onClick={next} className="group block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-200">
-              <div className="relative aspect-[2/3] overflow-hidden rounded-2xl bg-white/10">
-                {getTmdbImageUrl(nextItem.posterPath, "w342") ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={getTmdbImageUrl(nextItem.posterPath, "w342") ?? ""} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
-                ) : null}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-3 pt-14">
-                  <p className="line-clamp-2 text-sm font-semibold text-white">{nextItem.title}</p>
-                </div>
-              </div>
-            </button>
-          </div>
-        ) : null}
       </div>
     </section>
   );

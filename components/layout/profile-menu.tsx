@@ -1,7 +1,7 @@
 "use client";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { Camera, KeyRound, LogOut, UserRound } from "lucide-react";
+import { Camera, KeyRound, LogOut, UserRound, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 type ProfileMenuProps = {
@@ -39,10 +39,14 @@ export function ProfileMenu({ user, profile }: ProfileMenuProps) {
   }
 
   return (
-    <details className="group">
-      <summary
+    <div>
+      <input id="profile-menu-toggle" type="checkbox" className="peer hidden" />
+      <label
+        htmlFor="profile-menu-toggle"
+        role="button"
+        tabIndex={0}
         aria-label="Open profile menu"
-        className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border border-white/10 bg-white/[0.08] text-slate-100 transition marker:hidden hover:border-cyan-200/40 hover:bg-white/[0.14] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-200 [&::-webkit-details-marker]:hidden"
+        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/[0.08] text-slate-100 transition hover:border-cyan-200/40 hover:bg-white/[0.14] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-200"
       >
         {avatarPreview ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -50,12 +54,15 @@ export function ProfileMenu({ user, profile }: ProfileMenuProps) {
         ) : (
           <UserRound className="h-5 w-5" />
         )}
-      </summary>
-      <div className="fixed inset-0 z-50 hidden group-open:block">
-          <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
+      </label>
+      <div className="fixed inset-0 z-50 hidden peer-checked:block" role="dialog" aria-modal="true" aria-labelledby="profile-menu-title">
+          <label htmlFor="profile-menu-toggle" aria-label="Close profile menu" className="absolute inset-0 cursor-pointer bg-black/65 backdrop-blur-md" />
           <aside className="glass absolute right-0 top-0 h-full w-full max-w-sm overflow-y-auto rounded-none border-y-0 border-r-0 p-6 shadow-glow sm:rounded-l-[2rem]">
             <div className="flex items-center justify-between gap-4">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-200">Profile</p>
+              <p id="profile-menu-title" className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-200">Profile</p>
+              <label htmlFor="profile-menu-toggle" role="button" tabIndex={0} aria-label="Close profile menu" className="cursor-pointer rounded-full border border-white/10 bg-white/[0.06] p-2 transition hover:bg-white/[0.12]">
+                <X className="h-5 w-5" />
+              </label>
             </div>
 
             <div className="mt-6 flex items-center gap-4">
@@ -130,6 +137,6 @@ export function ProfileMenu({ user, profile }: ProfileMenuProps) {
             ) : null}
           </aside>
         </div>
-    </details>
+    </div>
   );
 }

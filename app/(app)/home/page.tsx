@@ -1,9 +1,10 @@
 import { CategoryRail } from "@/components/media/category-rail";
+import { BecauseYouWatchedRow } from "@/components/media/because-you-watched-row";
 import { HeroCarousel } from "@/components/media/hero-carousel";
 import { MediaRow } from "@/components/media/media-row";
 import { getContinueWatching, getRecommendedForUser, getUserMediaList } from "@/lib/library/queries";
 import { createOptionalSupabaseServerClient } from "@/lib/supabase/server";
-import { discoverAnime, discoverFiltered, getPopular, getTrending } from "@/lib/tmdb/client";
+import { discoverAnime, discoverFiltered, getPopular, getRecommendations, getTrending } from "@/lib/tmdb/client";
 
 export const dynamic = "force-dynamic";
 
@@ -42,12 +43,17 @@ export default async function HomePage() {
     preferences.smartCategories ? discoverFiltered({ mediaType: "movie", minRating: 8, sortBy: "vote_average.desc" }).then((data) => data.results).catch(() => []) : [],
     preferences.smartCategories ? discoverFiltered({ mediaType: "movie", mood: "feel-good" }).then((data) => data.results).catch(() => []) : [],
   ]);
+  const becauseYouWatchedSeed = continueWatching[0] ?? null;
+  const becauseYouWatched = becauseYouWatchedSeed
+    ? await getRecommendations(becauseYouWatchedSeed.mediaType, becauseYouWatchedSeed.tmdbId).catch(() => [])
+    : [];
 
   return (
     <>
       <HeroCarousel items={popularMovies.length ? popularMovies : movies} />
       <CategoryRail mediaType="movie" />
       <MediaRow title="Continue Watching" items={continueWatching} viewAllHref="/browse/continue-watching" />
+      {becauseYouWatchedSeed ? <BecauseYouWatchedRow watched={becauseYouWatchedSeed} items={becauseYouWatched} /> : null}
       <MediaRow title="Recommended for You" items={recommended} viewAllHref="/browse/recommended" />
       <MediaRow title="Watchlist" items={watchlist} viewAllHref="/browse/watchlist" />
       <MediaRow title="Trending Movies" items={movies} viewAllHref="/browse/trending-movies" />
