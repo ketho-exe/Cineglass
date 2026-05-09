@@ -7,15 +7,15 @@ export async function requireAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect("/home");
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, access_status")
+    .select("role")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profile?.access_status !== "approved" || !["owner", "admin"].includes(profile.role)) {
+  if (!["owner", "admin"].includes(profile?.role ?? "")) {
     notFound();
   }
 

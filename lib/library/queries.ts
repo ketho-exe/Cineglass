@@ -1,10 +1,12 @@
-import { requireUser } from "@/lib/auth/require-user";
+import { createOptionalSupabaseServerClient } from "@/lib/supabase/server";
 import { compactMedia, normaliseLibraryRows } from "@/lib/library/items";
 import { getDetails, getRecommendations } from "@/lib/tmdb/client";
 import type { MediaType, NormalisedMedia } from "@/types/media";
 
 export async function getLibraryStatus(mediaType: MediaType, tmdbId: number) {
-  const { supabase, user } = await requireUser();
+  const session = await getOptionalLibrarySession();
+  if (!session) return { inWatchlist: false, isFavourite: false };
+  const { supabase, user } = session;
   const [watchlist, favourite] = await Promise.all([
     supabase
       .from("watchlist_items")
@@ -29,7 +31,9 @@ export async function getLibraryStatus(mediaType: MediaType, tmdbId: number) {
 }
 
 export async function getUserMediaList(table: "watchlist_items" | "favourite_items") {
-  const { supabase, user } = await requireUser();
+  const session = await getOptionalLibrarySession();
+  if (!session) return [];
+  const { supabase, user } = session;
   const { data } = await supabase
     .from(table)
     .select("media_type, tmdb_id")
@@ -40,7 +44,9 @@ export async function getUserMediaList(table: "watchlist_items" | "favourite_ite
 }
 
 export async function getContinueWatching() {
-  const { supabase, user } = await requireUser();
+  const session = await getOptionalLibrarySession();
+  if (!session) return [];
+  const { supabase, user } = session;
   const { data } = await supabase
     .from("watch_progress")
     .select("media_type, tmdb_id, season_number, episode_number, progress_percent")
@@ -68,7 +74,9 @@ export async function getContinueWatching() {
 }
 
 export async function getWatchedHistory() {
-  const { supabase, user } = await requireUser();
+  const session = await getOptionalLibrarySession();
+  if (!session) return [];
+  const { supabase, user } = session;
   const { data } = await supabase
     .from("watch_progress")
     .select("media_type, tmdb_id")
@@ -80,7 +88,9 @@ export async function getWatchedHistory() {
 }
 
 export async function getRecommendedForUser() {
-  const { supabase, user } = await requireUser();
+  const session = await getOptionalLibrarySession();
+  if (!session) return [];
+  const { supabase, user } = session;
   const [progress, watchlist, favourites] = await Promise.all([
     supabase
       .from("watch_progress")
@@ -128,4 +138,13 @@ async function resolveMediaRefs(items: Array<{ mediaType: MediaType; tmdbId: num
     items.map((item) => getDetails(item.mediaType, item.tmdbId).catch(() => null)),
   );
   return compactMedia(media);
+}
+
+async function getOptionalLibrarySession() {
+  const supabase = await createOptionalSupabaseServerClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user ? { supabase, user } : null;
 }

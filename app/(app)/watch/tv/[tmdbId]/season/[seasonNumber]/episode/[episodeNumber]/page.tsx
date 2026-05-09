@@ -1,7 +1,7 @@
 import { ProviderPlayer } from "@/components/player/provider-player";
 import { WatchPartyPanel } from "@/components/player/watch-party-panel";
-import { requireUser } from "@/lib/auth/require-user";
 import { getPlaybackProvider } from "@/lib/providers/preferences";
+import { createOptionalSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function WatchTvPage({
   params,
@@ -12,12 +12,17 @@ export default async function WatchTvPage({
 }) {
   const { tmdbId, seasonNumber, episodeNumber } = await params;
   const { party } = await searchParams;
-  const { supabase, user } = await requireUser();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("home_preferences, player_provider")
-    .eq("id", user.id)
-    .maybeSingle();
+  const supabase = await createOptionalSupabaseServerClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+  const { data: profile } = user && supabase
+    ? await supabase
+      .from("profiles")
+      .select("home_preferences, player_provider")
+      .eq("id", user.id)
+      .maybeSingle()
+    : { data: null };
   const provider = getPlaybackProvider(profile);
   const preferences = getPlayerPreferences(profile?.home_preferences);
   return (

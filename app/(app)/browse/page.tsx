@@ -1,29 +1,22 @@
 import { FeatureTile } from "@/components/ui/feature-tile";
-import { LinkButton } from "@/components/ui/button";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { requireUser } from "@/lib/auth/require-user";
 import { getNavigationItems } from "@/lib/navigation";
-import { Search } from "lucide-react";
+import { createOptionalSupabaseServerClient } from "@/lib/supabase/server";
+import { Home, Search, UserRound } from "lucide-react";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function BrowsePage() {
-  const { supabase, user } = await requireUser();
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const supabase = await createOptionalSupabaseServerClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+  const { data: profile } = user && supabase
+    ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+    : { data: null };
   const navigation = getNavigationItems(profile?.role);
-  const sections = [
-    {
-      label: "Content",
-      items: [
-        ...navigation.browseSections[0].items,
-        { href: "/browse/top-rated", label: "Top Rated", icon: "favourites" as const, description: "Highly rated picks from TMDB" },
-        { href: "/browse/trending-movies", label: "Trending", icon: "rows" as const, description: "Popular movies and series right now" },
-      ],
-    },
-    navigation.browseSections[1],
-    { label: "Your Library", items: navigation.browseSections[2].items },
-    ...navigation.browseSections.slice(3),
-  ];
+  const sections = navigation.browseSections;
 
   return (
     <div className="space-y-8">
@@ -35,10 +28,17 @@ export default async function BrowsePage() {
             <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Browse CineGlass</h1>
             <p className="mt-3 max-w-2xl text-slate-300">Find movies, shows, anime, collections, and saved shelves.</p>
           </div>
-          <LinkButton href="/search" variant="glass" className="w-fit">
-            <Search className="h-4 w-4" />
-            Search CineGlass
-          </LinkButton>
+          <div className="flex gap-2">
+            <Link href="/search" aria-label="Search" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.08] text-white transition hover:border-cyan-200/40 hover:bg-white/[0.14]">
+              <Search className="h-5 w-5" />
+            </Link>
+            <Link href="/home" aria-label="Home" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.08] text-white transition hover:border-cyan-200/40 hover:bg-white/[0.14]">
+              <Home className="h-5 w-5" />
+            </Link>
+            <Link href="/profile" aria-label="Profile" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.08] text-white transition hover:border-cyan-200/40 hover:bg-white/[0.14]">
+              <UserRound className="h-5 w-5" />
+            </Link>
+          </div>
         </div>
       </section>
 

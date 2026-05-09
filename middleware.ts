@@ -18,7 +18,7 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
   let userId: string | undefined;
-  let accessStatus: string | undefined;
+  let role: string | undefined;
 
   try {
     const supabase = createMiddlewareSupabaseClient(request, response);
@@ -30,10 +30,10 @@ export async function middleware(request: NextRequest) {
     if (userId) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("access_status, role")
+        .select("role")
         .eq("id", userId)
         .maybeSingle();
-      accessStatus = profile?.access_status;
+      role = profile?.role;
     }
   } catch {
     if (isProtectedRoute(pathname)) {
@@ -49,12 +49,8 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  if (isAuthRoute(pathname) && accessStatus === "approved") {
+  if (isProtectedRoute(pathname) && !["owner", "admin"].includes(role ?? "")) {
     return NextResponse.redirect(new URL("/home", origin));
-  }
-
-  if (isProtectedRoute(pathname) && accessStatus !== "approved") {
-    return NextResponse.redirect(new URL("/access-pending", origin));
   }
 
   return response;

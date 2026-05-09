@@ -1,9 +1,9 @@
 import { CategoryRail } from "@/components/media/category-rail";
 import { HeroCarousel } from "@/components/media/hero-carousel";
 import { MediaRow } from "@/components/media/media-row";
-import { requireUser } from "@/lib/auth/require-user";
 import { getContinueWatching, getRecommendedForUser, getUserMediaList } from "@/lib/library/queries";
-import { discoverAnime, discoverFiltered, getTrending } from "@/lib/tmdb/client";
+import { createOptionalSupabaseServerClient } from "@/lib/supabase/server";
+import { discoverAnime, discoverFiltered, getPopular, getTrending } from "@/lib/tmdb/client";
 
 export const dynamic = "force-dynamic";
 
@@ -18,18 +18,24 @@ const defaultPreferences = {
 };
 
 export default async function HomePage() {
-  const { supabase, user } = await requireUser();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("home_preferences")
-    .eq("id", user.id)
-    .maybeSingle();
+  const supabase = await createOptionalSupabaseServerClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+  const { data: profile } = user && supabase
+    ? await supabase
+      .from("profiles")
+      .select("home_preferences")
+      .eq("id", user.id)
+      .maybeSingle()
+    : { data: null };
   const preferences = { ...defaultPreferences, ...(profile?.home_preferences as Partial<typeof defaultPreferences> | null) };
 
-  const [continueWatching, watchlist, recommended, movies, tv, anime, topRated, feelGood] = await Promise.all([
+  const [continueWatching, watchlist, recommended, popularMovies, movies, tv, anime, topRated, feelGood] = await Promise.all([
     preferences.continueWatching ? getContinueWatching().catch(() => []) : [],
     preferences.watchlist ? getUserMediaList("watchlist_items").catch(() => []) : [],
     preferences.recommended ? getRecommendedForUser().catch(() => []) : [],
+    getPopular("movie").catch(() => []),
     preferences.trendingMovies ? getTrending("movie").catch(() => []) : [],
     preferences.trendingTv ? getTrending("tv").catch(() => []) : [],
     preferences.anime ? discoverAnime().catch(() => []) : [],
@@ -39,7 +45,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <HeroCarousel items={recommended.length ? recommended : movies} />
+      <HeroCarousel items={popularMovies.length ? popularMovies : movies} />
       <CategoryRail mediaType="movie" />
       <MediaRow title="Continue Watching" items={continueWatching} viewAllHref="/browse/continue-watching" />
       <MediaRow title="Recommended for You" items={recommended} viewAllHref="/browse/recommended" />

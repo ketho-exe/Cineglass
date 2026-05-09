@@ -1,36 +1,21 @@
-const publicRoutes = new Set(["/login", "/access-pending"]);
-
 const protectedPrefixes = [
-  "/home",
-  "/search",
-  "/movie",
-  "/tv",
-  "/watch",
-  "/watchlist",
-  "/history",
-  "/collections",
-  "/collection",
-  "/profile",
-  "/settings",
   "/admin",
-  "/api/playback",
-  "/api/tmdb",
   "/api/watch-progress",
 ];
 
 export function isAuthRoute(pathname: string) {
-  return publicRoutes.has(normalisePath(pathname));
+  void pathname;
+  return false;
 }
 
 export function isProtectedRoute(pathname: string) {
   const path = normalisePath(pathname);
-  if (publicRoutes.has(path)) return false;
   return protectedPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 }
 
 export function getRedirectPath(target: string, origin: string) {
-  const safePath = safeLocalPath(target, origin);
-  return `/login?redirectTo=${encodeURIComponent(safePath)}`;
+  void safeLocalPath(target, origin);
+  return "/home";
 }
 
 export function safeLocalPath(target: string | null | undefined, origin: string) {
@@ -39,7 +24,7 @@ export function safeLocalPath(target: string | null | undefined, origin: string)
     const url = target.startsWith("/") ? new URL(target, origin) : new URL(target);
     if (url.origin !== origin) return "/home";
     const path = `${url.pathname}${url.search}`;
-    return path.startsWith("/login") ? "/home" : path;
+    return path.startsWith("/login") || path.startsWith("/access-pending") ? "/home" : path;
   } catch {
     return target.startsWith("/") && !target.startsWith("//") ? target : "/home";
   }

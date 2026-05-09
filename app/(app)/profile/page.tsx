@@ -1,10 +1,22 @@
-import { requireUser } from "@/lib/auth/require-user";
 import { getWatchedHistory } from "@/lib/library/queries";
+import { createOptionalSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const { supabase, user } = await requireUser();
+  const supabase = await createOptionalSupabaseServerClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+  if (!user || !supabase) {
+    return (
+      <section className="glass rounded-3xl p-7">
+        <p className="text-sm uppercase tracking-[0.22em] text-cyan-200">Guest profile</p>
+        <h1 className="mt-2 text-3xl font-bold">Browsing as guest</h1>
+        <p className="mt-3 text-slate-300">CineGlass browsing and playback are available without signing in.</p>
+      </section>
+    );
+  }
   const [{ data: profile }, progress, watchlist, favourites, ratings, reviews, history] = await Promise.all([
     supabase
     .from("profiles")

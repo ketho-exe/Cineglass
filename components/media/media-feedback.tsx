@@ -1,13 +1,17 @@
 import { saveMediaFeedback } from "@/app/(app)/media-feedback-actions";
 import { SubmitButton } from "@/components/ui/button";
-import { requireUser } from "@/lib/auth/require-user";
+import { createOptionalSupabaseServerClient } from "@/lib/supabase/server";
 import type { MediaType } from "@/types/media";
 
 export async function MediaFeedback({ mediaType, tmdbId }: { mediaType: MediaType; tmdbId: number }) {
-  const { supabase, user } = await requireUser();
+  const supabase = await createOptionalSupabaseServerClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+  if (!supabase) return null;
   const [ratingResult, noteResult, publicNotesResult] = await Promise.all([
-    supabase.from("ratings").select("rating").eq("user_id", user.id).eq("media_type", mediaType).eq("tmdb_id", tmdbId).maybeSingle(),
-    supabase.from("media_notes").select("note, visibility").eq("user_id", user.id).eq("media_type", mediaType).eq("tmdb_id", tmdbId).maybeSingle(),
+    user ? supabase.from("ratings").select("rating").eq("user_id", user.id).eq("media_type", mediaType).eq("tmdb_id", tmdbId).maybeSingle() : Promise.resolve({ data: null }),
+    user ? supabase.from("media_notes").select("note, visibility").eq("user_id", user.id).eq("media_type", mediaType).eq("tmdb_id", tmdbId).maybeSingle() : Promise.resolve({ data: null }),
     supabase
       .from("media_notes")
       .select("note, created_at, profiles(display_name)")
@@ -27,6 +31,7 @@ export async function MediaFeedback({ mediaType, tmdbId }: { mediaType: MediaTyp
         </div>
         <p className="text-sm text-slate-400">Private by default, or share with approved members.</p>
       </div>
+      {user ? (
       <form action={saveMediaFeedback} className="mt-5 grid gap-3">
         <input type="hidden" name="mediaType" value={mediaType} />
         <input type="hidden" name="tmdbId" value={tmdbId} />
@@ -49,6 +54,7 @@ export async function MediaFeedback({ mediaType, tmdbId }: { mediaType: MediaTyp
         </div>
         <SubmitButton className="w-fit">Save feedback</SubmitButton>
       </form>
+      ) : null}
       {publicNotesResult.data?.length ? (
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           {publicNotesResult.data.map((review, index) => (

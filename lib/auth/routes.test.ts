@@ -3,33 +3,30 @@ import { getRedirectPath, isAuthRoute, isProtectedRoute } from "./routes";
 import { getSupabaseConfig } from "./session";
 
 describe("auth route helpers", () => {
-  it("protects private application pages and private API routes", () => {
-    expect(isProtectedRoute("/home")).toBe(true);
-    expect(isProtectedRoute("/movie/299534")).toBe(true);
-    expect(isProtectedRoute("/watch/movie/299534")).toBe(true);
-    expect(isProtectedRoute("/api/playback/embedmaster")).toBe(true);
-    expect(isProtectedRoute("/api/playback/vidking")).toBe(true);
-    expect(isProtectedRoute("/api/tmdb/search")).toBe(true);
-    expect(isProtectedRoute("/api/watch-progress")).toBe(true);
+  it("keeps discovery and playback public while protecting admin routes", () => {
+    expect(isProtectedRoute("/home")).toBe(false);
+    expect(isProtectedRoute("/movie/299534")).toBe(false);
+    expect(isProtectedRoute("/watch/movie/299534")).toBe(false);
+    expect(isProtectedRoute("/api/playback/embedmaster")).toBe(false);
+    expect(isProtectedRoute("/api/tmdb/search")).toBe(false);
+    expect(isProtectedRoute("/admin")).toBe(true);
+    expect(isProtectedRoute("/admin/users")).toBe(true);
   });
 
-  it("does not protect public auth pages", () => {
+  it("does not treat login or pending access as special auth pages", () => {
     expect(isProtectedRoute("/login")).toBe(false);
     expect(isProtectedRoute("/access-pending")).toBe(false);
-  });
-
-  it("recognises auth-only routes", () => {
-    expect(isAuthRoute("/login")).toBe(true);
-    expect(isAuthRoute("/access-pending")).toBe(true);
+    expect(isAuthRoute("/login")).toBe(false);
+    expect(isAuthRoute("/access-pending")).toBe(false);
     expect(isAuthRoute("/home")).toBe(false);
   });
 
-  it("builds safe login redirect paths", () => {
+  it("builds safe home redirect paths", () => {
     expect(getRedirectPath("/watch/movie/299534", "http://localhost:3000")).toBe(
-      "/login?redirectTo=%2Fwatch%2Fmovie%2F299534",
+      "/home",
     );
     expect(getRedirectPath("https://evil.example/path", "http://localhost:3000")).toBe(
-      "/login?redirectTo=%2Fhome",
+      "/home",
     );
   });
 

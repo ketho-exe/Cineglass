@@ -1,7 +1,7 @@
 import { ProviderPlayer } from "@/components/player/provider-player";
 import { WatchPartyPanel } from "@/components/player/watch-party-panel";
-import { requireUser } from "@/lib/auth/require-user";
 import { getPlaybackProvider } from "@/lib/providers/preferences";
+import { createOptionalSupabaseServerClient } from "@/lib/supabase/server";
 import { getDetails } from "@/lib/tmdb/client";
 
 export default async function WatchMoviePage({
@@ -13,9 +13,12 @@ export default async function WatchMoviePage({
 }) {
   const { tmdbId } = await params;
   const { party } = await searchParams;
-  const { supabase, user } = await requireUser();
+  const supabase = await createOptionalSupabaseServerClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
   const [{ data: profile }, media] = await Promise.all([
-    supabase.from("profiles").select("home_preferences, player_provider").eq("id", user.id).maybeSingle(),
+    user && supabase ? supabase.from("profiles").select("home_preferences, player_provider").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
     getDetails("movie", Number(tmdbId)).catch(() => null),
   ]);
   const provider = getPlaybackProvider(profile);

@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Clapperboard,
-  Clock,
   Compass,
   Edit3,
   Heart,
@@ -11,24 +10,25 @@ import {
   ListVideo,
   Play,
   Search,
-  Settings,
   Shield,
   Sparkles,
   Tv,
   Users,
   Wand2,
+  CircleUserRound,
 } from "lucide-react";
 
 export type NavigationIcon =
   | "admin"
   | "anime"
+  | "channels"
   | "collections"
   | "compass"
-  | "continue"
   | "edit"
   | "favourites"
   | "history"
   | "home"
+  | "fourK"
   | "library"
   | "movies"
   | "player"
@@ -55,11 +55,12 @@ export type NavigationSection = {
 export const navigationIcons: Record<NavigationIcon, LucideIcon> = {
   admin: Shield,
   anime: Sparkles,
+  channels: ListVideo,
   collections: Library,
   compass: Compass,
-  continue: Clock,
   edit: Edit3,
   favourites: Heart,
+  fourK: Sparkles,
   history: History,
   home: Home,
   library: Library,
@@ -67,7 +68,7 @@ export const navigationIcons: Record<NavigationIcon, LucideIcon> = {
   player: Play,
   rows: ListVideo,
   search: Search,
-  settings: Settings,
+  settings: CircleUserRound,
   tv: Tv,
   users: Users,
   watchParty: Wand2,
@@ -91,11 +92,9 @@ export function getNavigationItems(role?: string | null) {
 
   return {
     primary: [
-      { href: "/home", label: "Home", icon: "home", description: "Your cinematic dashboard" },
       { href: "/browse", label: "Browse", icon: "compass", description: "Explore every shelf" },
       { href: "/search", label: "Search", icon: "search", description: "Find anything fast" },
-      { href: "/watchlist", label: "Library", icon: "library", description: "Saved titles" },
-      { href: "/settings", label: "Settings", icon: "settings", description: "Tune playback and home" },
+      { href: "/profile", label: "Profile", icon: "settings", description: "Your account" },
     ] satisfies NavigationItem[],
     browseSections: [
       {
@@ -109,10 +108,9 @@ export function getNavigationItems(role?: string | null) {
       {
         label: "Features",
         items: [
-          { href: "/search", label: "Search", icon: "search", description: "Natural language discovery" },
-          { href: "/collections", label: "Collections", icon: "collections", description: "Curated groups" },
+          { href: "/collections", label: "Channels", icon: "channels", description: "Curated channels and rows" },
+          { href: "/browse/top-rated", label: "4K", icon: "fourK", description: "Crisp, high-rated showcase picks" },
           { href: "/settings", label: "Watch Party", icon: "watchParty", description: "EmbedMaster shared viewing" },
-          { href: "/browse/continue-watching", label: "Continue Watching", icon: "continue", description: "Pick up in progress" },
         ],
       },
       {
@@ -120,8 +118,6 @@ export function getNavigationItems(role?: string | null) {
         items: [
           { href: "/history", label: "History", icon: "history", description: "Recently watched" },
           { href: "/watchlist", label: "Watchlist", icon: "watchlist", description: "Saved for later" },
-          { href: "/browse/favourites", label: "Favourites", icon: "favourites", description: "Loved titles" },
-          { href: "/settings", label: "Settings", icon: "settings", description: "Preferences" },
         ],
       },
       ...(adminItems.length ? [{ label: "Admin", items: adminItems }] : []),

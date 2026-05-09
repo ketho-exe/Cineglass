@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth/require-user";
+import { createOptionalSupabaseServerClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -11,13 +11,27 @@ type CollectionRow = {
 };
 
 export default async function CollectionsPage() {
-  const { supabase, user } = await requireUser();
-  const { data: collections } = await supabase
+  const supabase = await createOptionalSupabaseServerClient();
+  if (!supabase) {
+    return (
+      <div>
+        <h1 className="text-3xl font-bold">Collections</h1>
+        <section className="glass mt-6 rounded-3xl p-7">
+          <h2 className="text-xl font-semibold">No channels yet</h2>
+          <p className="mt-2 text-slate-300">Channels will appear here once a collection source is connected.</p>
+        </section>
+      </div>
+    );
+  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let query = supabase
     .from("collections")
     .select("id, title, description, visibility")
-    .or(`owner_id.eq.${user.id},visibility.eq.group`)
-    .order("updated_at", { ascending: false })
-    .returns<CollectionRow[]>();
+    .order("updated_at", { ascending: false });
+  query = user ? query.or(`owner_id.eq.${user.id},visibility.eq.group`) : query.eq("visibility", "group");
+  const { data: collections } = await query.returns<CollectionRow[]>();
 
   return (
     <div>

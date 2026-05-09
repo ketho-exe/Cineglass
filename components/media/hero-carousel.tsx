@@ -64,7 +64,7 @@ export function HeroCarousel({ items }: { items: NormalisedMedia[] }) {
       <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-cine-bg via-cine-bg/76 to-transparent" />
       <div className="relative mx-auto grid min-h-[560px] max-w-7xl items-end gap-8 px-4 pb-14 pt-20 sm:min-h-[620px] sm:px-6 lg:min-h-[calc(100vh-5rem)] lg:grid-cols-[1fr_260px] lg:pb-20">
         <div>
-        <p className="mb-3 text-sm font-medium uppercase tracking-[0.22em] text-cyan-200">Featured tonight</p>
+        <p className="mb-3 text-sm font-medium uppercase tracking-[0.22em] text-cyan-200">Popular movies</p>
         <h1 className="max-w-4xl text-4xl font-black uppercase tracking-normal sm:text-6xl lg:text-7xl">{item.title}</h1>
         <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-200">
           {metadata.map((value) => (
