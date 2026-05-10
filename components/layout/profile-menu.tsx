@@ -2,10 +2,12 @@
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Camera, KeyRound, LogOut, UserRound, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 type ProfileMenuProps = {
   user: {
+    id?: string | null;
     email?: string | null;
     createdAt?: string | null;
   };
@@ -17,7 +19,10 @@ type ProfileMenuProps = {
 };
 
 export function ProfileMenu({ user, profile }: ProfileMenuProps) {
+  const router = useRouter();
   const [passwordState, setPasswordState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [avatarState, setAvatarState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [avatarMessage, setAvatarMessage] = useState("");
   const [avatarPreview, setAvatarPreview] = useState(profile?.avatarUrl ?? "");
   const signedIn = Boolean(user.email);
   const name = profile?.displayName ?? user.email?.split("@")[0] ?? "Guest";
@@ -36,6 +41,55 @@ export function ProfileMenu({ user, profile }: ProfileMenuProps) {
     const { error } = await supabase.auth.updateUser({ password });
     setPasswordState(error ? "error" : "saved");
     if (!error) event.currentTarget.reset();
+  }
+
+  async function uploadAvatar(file: File) {
+    if (!user.id) return;
+
+    setAvatarState("saving");
+    setAvatarMessage("");
+    const localPreview = URL.createObjectURL(file);
+    setAvatarPreview(localPreview);
+
+    const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const filePath = `${user.id}/avatar.${extension}`;
+    const supabase = createSupabaseBrowserClient();
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        contentType: file.type || "image/jpeg",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      setAvatarState("error");
+      setAvatarMessage(uploadError.message);
+      URL.revokeObjectURL(localPreview);
+      setAvatarPreview(profile?.avatarUrl ?? "");
+      return;
+    }
+
+    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    const avatarUrl = `${data.publicUrl}?v=${Date.now()}`;
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: avatarUrl })
+      .eq("id", user.id);
+
+    URL.revokeObjectURL(localPreview);
+
+    if (profileError) {
+      setAvatarState("error");
+      setAvatarMessage(profileError.message);
+      setAvatarPreview(profile?.avatarUrl ?? "");
+      return;
+    }
+
+    setAvatarPreview(avatarUrl);
+    setAvatarState("saved");
+    setAvatarMessage("Avatar saved.");
+    router.refresh();
   }
 
   return (
@@ -98,18 +152,21 @@ export function ProfileMenu({ user, profile }: ProfileMenuProps) {
             {signedIn ? (
             <label className="mt-6 flex cursor-pointer items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.08] px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.14]">
               <Camera className="h-4 w-4" />
-              Upload avatar
+              {avatarState === "saving" ? "Uploading..." : "Upload avatar"}
               <input
                 type="file"
                 accept="image/*"
                 className="sr-only"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
-                  if (file) setAvatarPreview(URL.createObjectURL(file));
+                  if (file) void uploadAvatar(file);
+                  event.target.value = "";
                 }}
               />
             </label>
             ) : null}
+            {avatarState === "saved" ? <p className="mt-2 text-xs text-cyan-200">{avatarMessage}</p> : null}
+            {avatarState === "error" ? <p className="mt-2 text-xs text-rose-200">Avatar upload failed: {avatarMessage}</p> : null}
 
             {signedIn ? (
             <form onSubmit={changePassword} className="mt-4 rounded-2xl border border-white/10 bg-white/[0.05] p-4">

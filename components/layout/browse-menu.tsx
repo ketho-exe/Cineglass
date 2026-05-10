@@ -22,7 +22,7 @@ export function BrowseMenu({ role }: { role?: string | null }) {
       </label>
       <div className="fixed inset-0 z-50 hidden peer-checked:block" role="dialog" aria-modal="true" aria-labelledby="browse-menu-title">
           <label htmlFor="browse-menu-toggle" aria-label="Close browse menu" className="absolute inset-0 cursor-pointer bg-black/65 backdrop-blur-md" />
-          <div className="glass absolute left-1/2 top-20 w-[min(calc(100vw-2rem),42rem)] -translate-x-1/2 rounded-[2rem] p-5 shadow-glow sm:p-6">
+          <div className="absolute left-1/2 top-20 max-h-[calc(100vh-6rem)] w-[min(calc(100vw-2rem),58rem)] -translate-x-1/2 overflow-y-auto rounded-3xl border border-white/10 bg-zinc-950/86 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.42)] backdrop-blur-2xl sm:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Menu</p>
@@ -32,7 +32,7 @@ export function BrowseMenu({ role }: { role?: string | null }) {
                 <X className="h-5 w-5" />
               </label>
             </div>
-            <div className="mt-5 grid gap-5 sm:grid-cols-3">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {navigation.browseSections.map((section) => (
                 <section key={section.label}>
                   <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">{section.label}</h3>
@@ -43,12 +43,12 @@ export function BrowseMenu({ role }: { role?: string | null }) {
                         <Link
                           key={item.href}
                           href={item.href}
-                          className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-3 transition hover:border-cyan-200/40 hover:bg-white/[0.1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-200"
+                          className="group flex min-h-[4.25rem] items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.045] p-3 transition hover:border-cyan-200/35 hover:bg-white/[0.09] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-200"
                         >
-                          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-200/10 text-cyan-100">
-                            <Icon className="h-5 w-5" />
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-200/10 text-cyan-100">
+                            <Icon className="h-5 w-5 stroke-[2]" />
                           </span>
-                          <span>
+                          <span className="min-w-0">
                             <span className="block text-sm font-semibold text-white">{item.label}</span>
                             <span className="line-clamp-1 text-xs text-slate-500">{item.description}</span>
                           </span>

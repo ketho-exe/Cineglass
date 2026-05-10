@@ -14,4 +14,11 @@ describe("getNavigationItems", () => {
     expect(sections[1].items.map((item) => item.label)).toEqual(["Channels", "4K", "Watch Party"]);
     expect(sections[2].items.map((item) => item.label)).toEqual(["History", "Watchlist"]);
   });
+
+  it("labels the admin row manager clearly", () => {
+    const adminItems = getNavigationItems("admin").admin;
+
+    expect(adminItems.map((item) => item.label)).toContain("Content Rows");
+    expect(adminItems.find((item) => item.href === "/admin/rows")?.description).toBe("Curate homepage shelves");
+  });
 });

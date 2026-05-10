@@ -29,7 +29,7 @@ export function MediaCard({
   return (
     <article className={cn("group block w-[150px] shrink-0 snap-start sm:w-[180px]", className)}>
       <Link href={cardHref} prefetch className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-200">
-        <div className="glass-card relative aspect-[2/3] overflow-hidden rounded-2xl bg-white/10 shadow-glow transition duration-300 group-hover:-translate-y-1 group-hover:border-white/30 group-focus-within:-translate-y-1 group-focus-within:border-white/30">
+        <div className="relative aspect-[2/3] overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.045] transition duration-300 group-hover:border-cyan-200/30 group-focus-within:border-cyan-200/30">
           {poster ? (
             <Image src={poster} alt={`Poster for ${media.title}`} fill sizes="(min-width: 1024px) 180px, 45vw" className="object-cover transition duration-500 group-hover:scale-105 group-focus-within:scale-105" />
           ) : (
@@ -43,7 +43,7 @@ export function MediaCard({
             <Play className="h-4 w-4 fill-white" />
           </span>
           <div className="absolute inset-x-3 bottom-3 translate-y-2 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-            <div className="rounded-2xl border border-white/10 bg-black/78 p-2 text-xs text-white shadow-glow backdrop-blur">
+            <div className="rounded-xl border border-white/10 bg-black/78 p-2 text-xs text-white backdrop-blur">
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1"><Play className="h-3.5 w-3.5 fill-current" /> Watch</span>
                 <span className="inline-flex items-center gap-1 text-slate-300"><Info className="h-3.5 w-3.5" /> Details</span>

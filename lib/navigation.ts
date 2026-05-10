@@ -84,7 +84,7 @@ export function getNavigationItems(role?: string | null) {
     ? [
         { href: "/admin", label: "Admin", icon: "admin", description: "Operational overview" },
         { href: "/admin/users", label: "Users", icon: "users", description: "Approve and manage access" },
-        { href: "/admin/rows", label: "Rows", icon: "rows", description: "Curate home shelves" },
+        { href: "/admin/rows", label: "Content Rows", icon: "rows", description: "Curate homepage shelves" },
         { href: "/admin/manual-titles", label: "Manual Titles", icon: "edit", description: "Add specific TMDB titles" },
         { href: "/admin/player", label: "Player", icon: "player", description: "Playback provider controls" },
       ]

@@ -15,19 +15,19 @@ export async function TopNav() {
     : { data: null };
 
   return (
-    <header className="sticky top-0 z-40 -mb-20 bg-gradient-to-b from-black via-black/82 to-transparent">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 pb-8 pt-3 sm:px-6">
-        <Link href="/home" prefetch className="flex items-center gap-2 text-lg font-semibold">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-cine-bg shadow-[0_12px_32px_rgba(255,255,255,0.16)]">
+    <header className="sticky top-0 z-40 -mb-14 bg-gradient-to-b from-black via-black/86 to-transparent">
+      <nav className="mx-auto flex max-w-7xl items-start justify-between gap-4 px-4 pb-9 pt-4 sm:px-6 md:items-center">
+        <Link href="/home" prefetch className="flex min-w-0 items-center gap-3 text-lg font-semibold">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-cine-bg shadow-[0_12px_32px_rgba(255,255,255,0.16)]">
             <Clapperboard className="h-5 w-5" />
           </span>
-          CineGlass
+          <span className="truncate">CineGlass</span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <BrowseMenu role={profile?.role} />
           <SearchMenu />
           <ProfileMenu
-            user={{ email: user?.email, createdAt: user?.created_at }}
+            user={{ id: user?.id, email: user?.email, createdAt: user?.created_at }}
             profile={{ displayName: profile?.display_name, avatarUrl: profile?.avatar_url, role: profile?.role }}
           />
         </div>

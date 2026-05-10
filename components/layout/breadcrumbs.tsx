@@ -40,10 +40,10 @@ export function Breadcrumbs() {
   if (!crumbs.length) return null;
 
   return (
-    <nav aria-label="Breadcrumb" className="mx-auto max-w-7xl px-4 pt-5 sm:px-6">
-      <ol className="glass inline-flex max-w-full flex-wrap items-center gap-1 rounded-full px-3 py-2 text-sm text-slate-300">
+    <nav aria-label="Breadcrumb" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
+      <ol className="inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-2 rounded-full border border-white/10 bg-black/38 px-3 py-2 text-sm text-slate-300 backdrop-blur-xl">
         <li>
-          <Link href="/home" className="inline-flex items-center gap-1 rounded-full px-2 py-1 transition hover:bg-white/10 hover:text-white">
+          <Link href="/home" className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 transition hover:bg-white/10 hover:text-white">
             <Home className="h-4 w-4" />
             Home
           </Link>
@@ -54,11 +54,11 @@ export function Breadcrumbs() {
             <li key={`${crumb.label}-${index}`} className="inline-flex min-w-0 items-center gap-1">
               <ChevronRight className="h-4 w-4 shrink-0 text-slate-600" />
               {crumb.href && !isLast ? (
-                <Link href={crumb.href} className="truncate rounded-full px-2 py-1 transition hover:bg-white/10 hover:text-white">
+                <Link href={crumb.href} className="max-w-[12rem] truncate rounded-full px-2.5 py-1.5 transition hover:bg-white/10 hover:text-white sm:max-w-none">
                   {crumb.label}
                 </Link>
               ) : (
-                <span className={cn("truncate rounded-full px-2 py-1", isLast ? "bg-white/10 text-white" : "text-slate-200")}>
+                <span className={cn("max-w-[12rem] truncate rounded-full px-2.5 py-1.5 sm:max-w-none", isLast ? "bg-white/12 text-white ring-1 ring-white/10" : "text-slate-200")}>
                   {crumb.label}
                 </span>
               )}
