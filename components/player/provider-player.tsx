@@ -5,6 +5,7 @@ import type { PlaybackProvider } from "@/lib/providers/playback.types";
 import { parseProviderProgressMessage } from "@/components/player/player-events";
 import { playbackProviders, providerLabels } from "@/lib/providers/preferences";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { SafeIframe } from "@/components/shared/safe-iframe";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -231,12 +232,10 @@ export function ProviderPlayer(props: ProviderPlayerProps) {
       </div>
       <div className="aspect-video bg-black">
         {embedUrl ? (
-          <iframe
+          <SafeIframe
             ref={iframeRef}
             src={embedUrl}
             title={props.title}
-            allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *"
-            allowFullScreen
             className="h-full w-full border-0 bg-black"
           />
         ) : (
