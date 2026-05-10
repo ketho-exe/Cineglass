@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { discoverFiltered, searchPersonFilmography, searchTmdb } from "@/lib/tmdb/client";
 import { getGenres } from "@/lib/tmdb/genres";
 import { parseNaturalSearch } from "@/lib/tmdb/natural-language";
+import { getOptionalString, getSearchQuery } from "@/lib/search-params";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -12,18 +13,18 @@ export const dynamic = "force-dynamic";
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; type?: "multi" | "movie" | "tv"; genre?: string; year?: string; minRating?: string; language?: string; mood?: "feel-good" | "dark" | "mind-bending" }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const query = params.q?.trim() ?? "";
-  const type = params.type ?? "multi";
+  const query = getSearchQuery(params.q);
+  const type = getSearchType(params.type);
   const parsed = query ? parseNaturalSearch(query, type) : null;
   const mediaType = type === "multi" ? parsed?.mediaType : type;
   const genre = numberParam(params.genre) ?? parsed?.genreId;
   const year = numberParam(params.year) ?? parsed?.year;
   const minRating = numberParam(params.minRating) ?? parsed?.minRating;
-  const language = params.language || parsed?.language;
-  const mood = params.mood || parsed?.mood;
+  const language = getOptionalString(params.language) || parsed?.language;
+  const mood = getMood(params.mood) || parsed?.mood;
   const hasFilters = Boolean(mediaType || genre || year || minRating || language || mood);
   const data = query && !hasFilters
     ? await searchTmdb(query, type).catch(() => ({ results: [] }))
@@ -159,8 +160,19 @@ export default async function SearchPage({
   );
 }
 
-function numberParam(value: string | undefined) {
-  if (!value) return undefined;
-  const number = Number(value);
+function getSearchType(value: unknown): "multi" | "movie" | "tv" {
+  const type = getOptionalString(value);
+  return type === "movie" || type === "tv" || type === "multi" ? type : "multi";
+}
+
+function getMood(value: unknown): "feel-good" | "dark" | "mind-bending" | "" {
+  const mood = getOptionalString(value);
+  return mood === "feel-good" || mood === "dark" || mood === "mind-bending" ? mood : "";
+}
+
+function numberParam(value: unknown) {
+  const normalised = getOptionalString(value);
+  if (!normalised) return undefined;
+  const number = Number(normalised);
   return Number.isFinite(number) && number > 0 ? number : undefined;
 }
