@@ -74,7 +74,7 @@ export function SearchMenu() {
                 name="q"
                 autoFocus
                 placeholder="Type here to search..."
-                className="w-full rounded-full border border-white/12 bg-zinc-950/72 py-5 pl-14 pr-5 text-xl text-white shadow-[0_20px_70px_rgba(0,0,0,0.28)] outline-none transition placeholder:text-slate-500 focus:border-cyan-200"
+                className="w-full rounded-full border border-white/12 bg-white/92 py-5 pl-14 pr-5 text-xl text-slate-950 caret-cyan-500 shadow-[0_20px_70px_rgba(0,0,0,0.28)] outline-none transition placeholder:text-slate-500 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/35"
               />
             </label>
             <div className="mt-5 flex items-center justify-between px-1">
